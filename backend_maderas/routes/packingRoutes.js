@@ -1,13 +1,19 @@
 const express = require('express');
 const router = express.Router();
-const { crearPacking, obtenerPackings, obtenerPackingPorId } = require('../controllers/packingController');
+// Ahora sí coinciden los nombres con el controller
+const { 
+    crearPacking, 
+    obtenerPackings, 
+    getPackingItems, 
+    deletePacking 
+} = require('../controllers/packingController');
 const { verificarToken } = require('../middleware/auth.middleware');
 
-// Todas las rutas protegidas
 router.use(verificarToken);
 
-router.post('/', crearPacking);       // Crear Packing + Items
-router.get('/', obtenerPackings);     // Listar
-router.get('/:id', obtenerPackingPorId); // Ver detalle
+router.post('/', crearPacking);       
+router.get('/', obtenerPackings);     
+router.get('/:id/items', getPackingItems); 
+router.delete('/:id', deletePacking); 
 
 module.exports = router;

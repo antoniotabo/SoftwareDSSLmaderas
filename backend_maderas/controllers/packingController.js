@@ -1,35 +1,22 @@
 const db = require('../config/database');
 
-/**
- * Crear un Packing completo (Cabecera + Items)
- * Transacción ACID: O se guarda todo, o no se guarda nada.
- */
+// ✅ CAMBIO AQUÍ: De 'createPacking' a 'crearPacking'
 const crearPacking = async (req, res) => {
-    // 1. Obtener una conexión dedicada para la transacción
-    // (No usamos 'db' directo porque necesitamos commit/rollback)
-    // NOTA: db.getConnection() es necesario para transacciones manuales
-    // Como usamos pool.promise(), accedemos al pool original para esto o usamos lógica simple:
-    
-    // Simplificación para mysql2 con pool:
     const connection = await db.getConnection();
-
     try {
         const { cliente_id, fecha, observacion, items } = req.body;
-        // items es un array: [{ especie, espesor, ancho, largo, cantidad, ... }]
-
-        // 2. Iniciar Transacción
+        
         await connection.beginTransaction();
 
-        // 3. Insertar Cabecera (Packing)
-        const [packingResult] = await connection.query(
+        // Insertar Cabecera
+        const [resPacking] = await connection.query(
             'INSERT INTO packing (cliente_id, fecha, observacion, usuario_id) VALUES (?, ?, ?, ?)',
-            [cliente_id, fecha, observacion, req.usuario.id] // req.usuario.id viene del token
+            [cliente_id, fecha, observacion, req.usuario.id]
         );
         
-        const packingId = packingResult.insertId;
+        const packingId = resPacking.insertId;
 
-        // 4. Insertar Items (Loop)
-        // Preparamos los valores para una inserción masiva (Bulk Insert) por eficiencia
+        // Insertar Items
         if (items && items.length > 0) {
             const values = items.map(item => [
                 packingId, 
@@ -37,78 +24,79 @@ const crearPacking = async (req, res) => {
                 item.espesor, 
                 item.ancho, 
                 item.largo, 
-                item.cantidad,
-                item.volumen_pt // Asegúrate de calcular esto en el frontend o aquí
+                item.cantidad, 
+                item.vol_pt
             ]);
-
+            
             await connection.query(
-                'INSERT INTO packing_items (packing_id, especie, espesor, ancho, largo, cantidad, volumen_pt) VALUES ?',
+                'INSERT INTO packing_items (packing_id, especie, espesor, ancho, largo, cantidad, vol_pt) VALUES ?',
                 [values]
             );
         }
 
-        // 5. Confirmar Cambios
         await connection.commit();
-
-        res.status(201).json({
-            success: true,
-            mensaje: 'Packing registrado correctamente',
-            data: { id: packingId, items_count: items.length }
-        });
+        res.status(201).json({ success: true, message: 'Packing registrado', id: packingId });
 
     } catch (error) {
-        // 6. Si algo falla, revertir todo
         await connection.rollback();
-        console.error('Error en crearPacking:', error);
-        res.status(500).json({
-            success: false,
-            mensaje: 'Error al registrar el packing',
-            error: error.message
-        });
+        console.error("Error al crear packing:", error);
+        res.status(500).json({ message: 'Error al crear packing', error: error.message });
     } finally {
-        // 7. Liberar conexión siempre
         connection.release();
     }
 };
 
-/**
- * Obtener todos los packings
- */
+// Obtener Items de un Packing
+const getPackingItems = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const [items] = await db.query('SELECT * FROM packing_items WHERE packing_id = ?', [id]);
+        // Estandarizamos la respuesta
+        res.json({ success: true, data: items });
+    } catch (error) {
+        res.status(500).json({ message: 'Error al obtener items', error: error.message });
+    }
+};
+
+// Eliminar Packing Completo (Transacción)
+const deletePacking = async (req, res) => {
+    const connection = await db.getConnection();
+    try {
+        const { id } = req.params;
+        await connection.beginTransaction();
+
+        // Primero borramos hijos
+        await connection.query('DELETE FROM packing_items WHERE packing_id = ?', [id]);
+        // Luego borramos padre
+        const [result] = await connection.query('DELETE FROM packing WHERE id = ?', [id]);
+
+        await connection.commit();
+
+        if (result.affectedRows === 0) return res.status(404).json({ message: 'Packing no encontrado' });
+        res.json({ success: true, message: 'Packing eliminado correctamente' });
+    } catch (error) {
+        await connection.rollback();
+        res.status(500).json({ message: 'Error al eliminar', error: error.message });
+    } finally {
+        connection.release();
+    }
+};
+
+// Listar Packings (Cabecera)
 const obtenerPackings = async (req, res) => {
     try {
         const [rows] = await db.query(`
-            SELECT p.*, c.nombre as cliente_nombre 
+            SELECT p.*, c.nombre_razon_social as cliente 
             FROM packing p 
             LEFT JOIN clientes c ON p.cliente_id = c.id 
             ORDER BY p.fecha DESC
         `);
+        // Estandarizamos la respuesta
         res.json({ success: true, data: rows });
     } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
+        res.status(500).json({ message: error.message });
     }
 };
 
-/**
- * Obtener un packing con sus items
- */
-const obtenerPackingPorId = async (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // Consultar cabecera
-        const [packing] = await db.query('SELECT * FROM packing WHERE id = ?', [id]);
-        if (packing.length === 0) return res.status(404).json({ success: false, msg: 'No encontrado' });
-
-        // Consultar hijos
-        const [items] = await db.query('SELECT * FROM packing_items WHERE packing_id = ?', [id]);
-
-        res.json({
-            success: true,
-            data: { ...packing[0], items }
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, error: error.message });
-    }
-};
-
-module.exports = { crearPacking, obtenerPackings, obtenerPackingPorId };
+// ✅ IMPORTANTE: Exportamos 'crearPacking' (en español)
+module.exports = { crearPacking, obtenerPackings, getPackingItems, deletePacking };
