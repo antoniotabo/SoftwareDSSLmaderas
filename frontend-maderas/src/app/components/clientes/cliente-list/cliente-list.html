@@ -1,0 +1,38 @@
+<div class="card shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h5 class="m-0 font-weight-bold text-primary">Listado de Clientes</h5>
+        <button class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg"></i> Nuevo Cliente
+        </button>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>Razón Social</th>
+                        <th>RUC / DNI</th>
+                        <th>Contacto</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr *ngFor="let cliente of clientes">
+                        <td class="fw-bold">{{ cliente.razon_social }}</td>
+                        <td>{{ cliente.ruc }}</td>
+                        <td>{{ cliente.contacto }}</td>
+                        <td>
+                            <span class="badge" 
+                                  [ngClass]="cliente.estado === 'ACTIVO' ? 'bg-success' : 'bg-danger'">
+                                {{ cliente.estado }}
+                            </span>
+                        </td>
+                    </tr>
+                    <tr *ngIf="clientes.length === 0">
+                        <td colspan="4" class="text-center text-muted py-4">No hay clientes registrados.</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

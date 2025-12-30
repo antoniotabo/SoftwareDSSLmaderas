@@ -1,1 +1,12 @@
-/* You can add global styles to this file, and also import other style files */
+/* Estilo para items activos del menú */
+.list-group-item-dark.active {
+    background-color: #198754 !important; /* Verde éxito */
+    border-color: #198754 !important;
+    color: white !important;
+}
+
+/* Fondo general */
+body, html {
+    height: 100%;
+    background-color: #f8f9fa;
+}

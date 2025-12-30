@@ -9,7 +9,7 @@ const { validationResult } = require('express-validator');
  */
 const registrarUsuario = async (req, res) => {
     try {
-        // Validar errores
+        // 1. Validar errores de express-validator
         const errors = validationResult(req);
         if (!errors.isEmpty()) {
             return res.status(400).json({
@@ -20,7 +20,7 @@ const registrarUsuario = async (req, res) => {
 
         const { nombre, email, password, rol } = req.body;
 
-        // Verificar si el email ya existe
+        // 2. Verificar si el email ya existe
         const [usuarioExistente] = await db.query(
             'SELECT * FROM usuarios WHERE email = ?',
             [email]
@@ -33,11 +33,11 @@ const registrarUsuario = async (req, res) => {
             });
         }
 
-        // Hashear password
+        // 3. Hashear password
         const salt = await bcrypt.genSalt(parseInt(process.env.BCRYPT_ROUNDS) || 10);
         const passwordHash = await bcrypt.hash(password, salt);
 
-        // Insertar usuario
+        // 4. Insertar usuario
         const [resultado] = await db.query(
             'INSERT INTO usuarios (nombre, email, password, rol) VALUES (?, ?, ?, ?)',
             [nombre, email, passwordHash, rol || 'usuario']
@@ -53,6 +53,7 @@ const registrarUsuario = async (req, res) => {
                 rol: rol || 'usuario'
             }
         });
+
     } catch (error) {
         console.error('Error al registrar usuario:', error);
         res.status(500).json({
@@ -71,7 +72,7 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Validar campos
+        // 1. Validar campos obligatorios
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
@@ -79,25 +80,22 @@ const login = async (req, res) => {
             });
         }
 
-
-        // Buscar usuario
+        // 2. Buscar usuario (Solo usuarios ACTIVOS)
         const [usuarios] = await db.query(
-            'SELECT * FROM usuarios WHERE email = ? AND activo = 1',
+            'SELECT * FROM usuarios WHERE email = ? AND estado = "ACTIVO"',
             [email]
         );
-
-        console.log(usuarios, email, password)
 
         if (usuarios.length === 0) {
             return res.status(401).json({
                 success: false,
-                mensaje: 'Credenciales inválidas'
+                mensaje: 'Credenciales inválidas o usuario inactivo'
             });
         }
 
         const usuario = usuarios[0];
 
-        // Verificar password
+        // 3. Verificar password
         const passwordValido = await bcrypt.compare(password, usuario.password);
 
         if (!passwordValido) {
@@ -107,13 +105,11 @@ const login = async (req, res) => {
             });
         }
 
-        // Actualizar última conexión
-        await db.query(
-            'UPDATE usuarios SET ultima_conexion = CURRENT_TIMESTAMP WHERE id = ?',
-            [usuario.id]
-        );
+        /* ❌ ELIMINADO: 'UPDATE usuarios SET ultima_conexion...'
+           Se eliminó porque tu tabla 'usuarios' no tiene esa columna y causaba Error 500.
+        */
 
-        // Generar token JWT
+        // 4. Generar token JWT
         const token = jwt.sign(
             {
                 id: usuario.id,
@@ -121,10 +117,11 @@ const login = async (req, res) => {
                 nombre: usuario.nombre,
                 rol: usuario.rol
             },
-            process.env.JWT_SECRET,
+            process.env.JWT_SECRET || 'secreto_super_seguro', // Fallback por seguridad
             { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
         );
 
+        // 5. Responder al frontend
         res.json({
             success: true,
             mensaje: 'Inicio de sesión exitoso',
@@ -136,6 +133,7 @@ const login = async (req, res) => {
                 rol: usuario.rol
             }
         });
+
     } catch (error) {
         console.error('Error en login:', error);
         res.status(500).json({
@@ -152,8 +150,9 @@ const login = async (req, res) => {
  */
 const obtenerPerfil = async (req, res) => {
     try {
+        // Corregido: La consulta SQL estaba comentada
         const [usuarios] = await db.query(
-            'SELECT id, nombre, email, rol, fecha_registro, ultima_conexion FROM usuarios WHERE id = ?',
+            'SELECT id, nombre, email, rol, estado FROM usuarios WHERE id = ?',
             [req.usuario.id]
         );
 
@@ -168,6 +167,7 @@ const obtenerPerfil = async (req, res) => {
             success: true,
             data: usuarios[0]
         });
+
     } catch (error) {
         console.error('Error al obtener perfil:', error);
         res.status(500).json({

@@ -1,0 +1,95 @@
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>📄 Nuevo Packing</h3>
+        <a routerLink="/packing" class="btn btn-outline-secondary">Cancelar</a>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="guardar()">
+        <div class="card mb-4 shadow-sm">
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Cliente</label>
+                        <select class="form-select" formControlName="cliente_id">
+                            <option value="">-- Seleccione Cliente --</option>
+                            <option *ngFor="let c of clientes" [value]="c.id">{{ c.razon_social }}</option>
+                        </select>
+                        <div *ngIf="form.get('cliente_id')?.invalid && form.get('cliente_id')?.touched" class="text-danger small">
+                            Requerido
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Fecha</label>
+                        <input type="date" class="form-control" formControlName="fecha">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Observación</label>
+                        <input type="text" class="form-control" formControlName="observacion" placeholder="Opcional">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
+                <span>Detalle de Madera</span>
+                <span class="badge bg-warning text-dark fs-6">Total PT: {{ totalVolumen }}</span>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-striped mb-0 text-center align-middle">
+                        <thead class="bg-light">
+                            <tr>
+                                <th style="width: 20%">Especie</th>
+                                <th style="width: 10%">Cant.</th>
+                                <th style="width: 10%">Esp (")</th>
+                                <th style="width: 10%">Ancho (")</th>
+                                <th style="width: 10%">Largo (')</th>
+                                <th style="width: 15%">PT (Vol)</th>
+                                <th style="width: 5%"></th>
+                            </tr>
+                        </thead>
+                        <tbody formArrayName="items">
+                            <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+                                <td>
+                                    <input type="text" class="form-control form-control-sm" formControlName="especie" placeholder="Ej: Cachimbo">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm" formControlName="cantidad">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm" formControlName="espesor">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm" formControlName="ancho">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm" formControlName="largo">
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm bg-light fw-bold text-end" formControlName="vol_pt" readonly>
+                                </td>
+                                <td>
+                                    <button type="button" class="btn btn-sm btn-danger" (click)="eliminarFila(i)" *ngIf="items.length > 1">
+                                        <i class="bi bi-x-lg"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                
+                <div class="p-3 bg-light">
+                    <button type="button" class="btn btn-outline-primary w-100 dashed-border" (click)="agregarFila()">
+                        <i class="bi bi-plus-lg"></i> Agregar Fila
+                    </button>
+                </div>
+            </div>
+            <div class="card-footer text-end">
+                <button type="submit" class="btn btn-lg btn-success px-5">
+                    <i class="bi bi-save me-2"></i> Guardar Packing
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
