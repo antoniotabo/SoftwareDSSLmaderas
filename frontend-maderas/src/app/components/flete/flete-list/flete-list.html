@@ -1,0 +1,200 @@
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="text-dark mb-1">
+        <i class="bi bi-truck me-2"></i>Gestión de Fletes
+      </h3>
+      <p class="text-muted mb-0">Control de transporte y pagos</p>
+    </div>
+    <a routerLink="/fletes/nuevo" class="btn btn-primary">
+      <i class="bi bi-plus-circle me-2"></i>Nuevo Flete
+    </a>
+  </div>
+
+  <!-- Estadísticas -->
+  <div class="row g-3 mb-4">
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <p class="text-muted mb-1 small">Total Fletes</p>
+              <h4 class="mb-0">{{ stats.total_fletes }}</h4>
+            </div>
+            <i class="bi bi-truck text-primary" style="font-size: 2rem;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <p class="text-muted mb-1 small">Pendientes</p>
+              <h4 class="mb-0 text-warning">{{ stats.pendientes }}</h4>
+            </div>
+            <i class="bi bi-hourglass-split text-warning" style="font-size: 2rem;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <p class="text-muted mb-1 small">Total Valor</p>
+              <h5 class="mb-0">S/ {{ stats.total_valor | number:'1.2-2' }}</h5>
+            </div>
+            <i class="bi bi-cash-coin text-success" style="font-size: 2rem;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-3">
+      <div class="card border-0 shadow-sm">
+        <div class="card-body">
+          <div class="d-flex justify-content-between">
+            <div>
+              <p class="text-muted mb-1 small">Por Cobrar</p>
+              <h5 class="mb-0 text-danger">S/ {{ stats.total_pendiente | number:'1.2-2' }}</h5>
+            </div>
+            <i class="bi bi-exclamation-triangle text-danger" style="font-size: 2rem;"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light">
+      <h6 class="mb-0">
+        <i class="bi bi-funnel me-2"></i>Filtros de Búsqueda
+      </h6>
+    </div>
+    <div class="card-body">
+      <div class="row g-3">
+        <div class="col-md-3">
+          <label class="form-label small">Estado</label>
+          <select [(ngModel)]="filtros.estado" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="CANCELADO">Cancelado</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="form-label small">Transportista</label>
+          <select [(ngModel)]="filtros.transportista_id" class="form-select form-select-sm">
+            <option value="">Todos</option>
+            <option *ngFor="let t of transportistas" [value]="t.id">
+              {{ t.nombre }}
+            </option>
+          </select>
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Desde</label>
+          <input type="date" [(ngModel)]="filtros.desde" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-2">
+          <label class="form-label small">Hasta</label>
+          <input type="date" [(ngModel)]="filtros.hasta" class="form-control form-control-sm">
+        </div>
+        <div class="col-md-2 d-flex align-items-end gap-2">
+          <button (click)="cargarFletes()" class="btn btn-primary btn-sm flex-grow-1">
+            <i class="bi bi-search me-1"></i>Buscar
+          </button>
+          <button (click)="limpiarFiltros()" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-x-circle"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla de Fletes -->
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div *ngIf="loading" class="text-center py-5">
+        <div class="spinner-border text-primary" role="status">
+          <span class="visually-hidden">Cargando...</span>
+        </div>
+      </div>
+
+      <div *ngIf="!loading" class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="py-3 ps-3">ID</th>
+              <th class="py-3">Fecha</th>
+              <th class="py-3">Transportista</th>
+              <th class="py-3">Guía Remitente</th>
+              <th class="py-3">Guía Transportista</th>
+              <th class="py-3">Detalle Carga</th>
+              <th class="py-3 text-end">Valor Flete</th>
+              <th class="py-3 text-end">Adelanto</th>
+              <th class="py-3 text-end">Pago</th>
+              <th class="py-3 text-end">Pendiente</th>
+              <th class="py-3 text-center">Estado</th>
+              <th class="py-3 text-center pe-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let f of fletes">
+              <td class="ps-3 fw-bold">#{{ f.id }}</td>
+              <td>{{ f.fecha | date:'dd/MM/yyyy' }}</td>
+              <td>{{ f.transportista_nombre || '---' }}</td>
+              <td>{{ f.guia_remitente || '---' }}</td>
+              <td>{{ f.guia_transportista || '---' }}</td>
+              <td>
+                <small class="text-muted">{{ f.detalle_carga || '---' }}</small>
+              </td>
+              <td class="text-end fw-bold">S/ {{ f.valor_flete | number:'1.2-2' }}</td>
+              <td class="text-end">S/ {{ (f.adelanto || 0) | number:'1.2-2' }}</td>
+              <td class="text-end">S/ {{ (f.pago || 0) | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold" [class.text-danger]="(f.pendiente || 0) > 0">
+                S/ {{ (f.pendiente || 0) | number:'1.2-2' }}
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="getBadgeClass(f.estado!)">
+                  {{ f.estado }}
+                </span>
+              </td>
+              <td class="text-center pe-3">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button 
+                    *ngIf="f.estado === 'PENDIENTE'"
+                    (click)="mostrarModalPago(f)" 
+                    class="btn btn-success"
+                    title="Registrar Pago">
+                    <i class="bi bi-cash"></i>
+                  </button>
+                  <a 
+                    [routerLink]="['/fletes/editar', f.id]" 
+                    class="btn btn-outline-primary"
+                    title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <button 
+                    (click)="eliminar(f.id!)" 
+                    class="btn btn-outline-danger"
+                    title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="fletes.length === 0">
+              <td colspan="12" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                No hay fletes registrados
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

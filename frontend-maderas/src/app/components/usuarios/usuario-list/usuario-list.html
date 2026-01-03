@@ -1,0 +1,105 @@
+<div class="container-fluid">
+  <!-- Header -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="text-dark mb-1">
+        <i class="bi bi-person-gear me-2"></i>Gestión de Usuarios
+      </h3>
+      <p class="text-muted mb-0">
+        <i class="bi bi-shield-lock me-1"></i>
+        Solo el Gerente puede gestionar usuarios
+      </p>
+    </div>
+    <a routerLink="/usuarios/nuevo" class="btn btn-danger">
+      <i class="bi bi-person-plus me-2"></i>Nuevo Usuario
+    </a>
+  </div>
+
+  <!-- Indicador de carga -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Cargando...</span>
+    </div>
+  </div>
+
+  <!-- Tabla de Usuarios -->
+  <div *ngIf="!loading" class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover mb-0">
+          <thead class="table-dark">
+            <tr>
+              <th class="py-3 ps-3">ID</th>
+              <th class="py-3">Nombre</th>
+              <th class="py-3">Email</th>
+              <th class="py-3 text-center">Rol</th>
+              <th class="py-3 text-center">Estado</th>
+              <th class="py-3 text-center pe-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let u of usuarios">
+              <td class="ps-3 fw-bold">#{{ u.id }}</td>
+              <td>
+                {{ u.nombre }}
+                <span *ngIf="u.id === usuarioActualId" class="badge bg-info ms-2">
+                  Tú
+                </span>
+              </td>
+              <td>
+                <i class="bi bi-envelope me-1"></i>
+                {{ u.email }}
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="getRolBadge(u.rol)">
+                  {{ getRolTexto(u.rol) }}
+                </span>
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="getBadgeClass(u.estado)">
+                  {{ u.estado }}
+                </span>
+              </td>
+              <td class="text-center pe-3">
+                <div class="btn-group btn-group-sm" role="group">
+                  <button 
+                    (click)="cambiarPassword(u.id!, u.nombre)"
+                    class="btn btn-warning"
+                    title="Cambiar Contraseña">
+                    <i class="bi bi-key"></i>
+                  </button>
+                  <a 
+                    [routerLink]="['/usuarios/editar', u.id]"
+                    class="btn btn-primary"
+                    title="Editar">
+                    <i class="bi bi-pencil"></i>
+                  </a>
+                  <button 
+                    *ngIf="u.id !== usuarioActualId"
+                    (click)="eliminar(u.id!, u.nombre)"
+                    class="btn btn-danger"
+                    title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="usuarios.length === 0">
+              <td colspan="6" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                No hay usuarios registrados
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info adicional -->
+  <div class="alert alert-info mt-4">
+    <i class="bi bi-info-circle me-2"></i>
+    <strong>Nota:</strong> Los empleados pueden acceder a todos los módulos excepto la gestión de usuarios.
+    Solo el Gerente puede crear, editar y eliminar cuentas de usuario.
+  </div>
+</div>

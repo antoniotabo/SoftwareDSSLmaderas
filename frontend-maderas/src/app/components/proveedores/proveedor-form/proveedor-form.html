@@ -1,0 +1,52 @@
+<div class="container mt-4">
+  <div class="card mx-auto shadow border-0" style="max-width: 600px;">
+    
+    <div class="card-header bg-dark text-white py-3">
+      <h4 class="mb-0 fw-bold">
+        <i class="bi" [ngClass]="isEdit ? 'bi-pencil-square' : 'bi-person-plus-fill'"></i>
+        {{ isEdit ? 'Editar Proveedor' : 'Nuevo Proveedor' }}
+      </h4>
+      <small class="text-white-50">Gestión de socios comerciales</small>
+    </div>
+
+    <div class="card-body p-4">
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        
+        <div class="mb-3">
+          <label class="form-label fw-bold">Nombre / Razón Social</label>
+          <input type="text" class="form-control" formControlName="nombre" placeholder="Ej: Maderas del Oriente SAC">
+          <div *ngIf="form.get('nombre')?.invalid && form.get('nombre')?.touched" class="text-danger small mt-1">
+            El nombre es obligatorio.
+          </div>
+        </div>
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label class="form-label fw-bold">RUC</label>
+            <input type="text" class="form-control" formControlName="ruc" placeholder="11 dígitos" maxlength="11">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Contacto (Opcional)</label>
+            <input type="text" class="form-control" formControlName="contacto" placeholder="Email o Teléfono">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold">Estado</label>
+          <select class="form-select" formControlName="estado">
+            <option value="ACTIVO">ACTIVO</option>
+            <option value="INACTIVO">INACTIVO</option>
+          </select>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <a routerLink="/proveedores" class="btn btn-light border px-4">Cancelar</a>
+          <button type="submit" class="btn btn-primary px-4 fw-bold" [disabled]="form.invalid">
+            <i class="bi bi-save me-2"></i> Guardar
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

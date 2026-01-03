@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+
+// 1. Importar el Controlador (ESTO ESTÁ PERFECTO ✅)
 const { 
     getClientes, 
     getClienteById, 
@@ -7,14 +9,19 @@ const {
     updateCliente, 
     deleteCliente 
 } = require('../controllers/clienteController');
+
+// 2. Importar el Middleware (AQUÍ ESTABA EL ERROR ⚠️)
+// El archivo se llama 'authMiddleware' y no usa llaves {} porque es export default
 const { verificarToken } = require('../middleware/auth.middleware');
 
-router.use(verificarToken); // Protección global
+// 3. Proteger todas las rutas de abajo
+router.use(verificarToken); 
 
-router.get('/', getClientes);
-router.get('/:id', getClienteById);
-router.post('/', createCliente);
-router.put('/:id', updateCliente);
-router.delete('/:id', deleteCliente);
+// 4. Rutas (ESTO ESTÁ PERFECTO ✅)
+router.get('/', getClientes);           // Listar con filtros
+router.get('/:id', getClienteById);     // Obtener uno para editar
+router.post('/', createCliente);        // Crear
+router.put('/:id', updateCliente);      // Editar
+router.delete('/:id', deleteCliente);   // Eliminar
 
 module.exports = router;

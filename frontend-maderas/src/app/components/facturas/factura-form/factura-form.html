@@ -1,1 +1,173 @@
-<p>factura-form works!</p>
+<div class="container mt-4 pb-5">
+  
+  <div class="card shadow border-0">
+    
+    <div class="card-header bg-primary text-white py-3">
+      <div class="d-flex justify-content-between align-items-center">
+        <h4 class="mb-0 fw-bold">
+          <i class="bi" [ngClass]="isEditMode ? 'bi-pencil-square' : 'bi-receipt-cutoff'"></i>
+          {{ isEditMode ? 'Editar Factura #' + facturaId : 'Nueva Factura de Venta' }}
+        </h4>
+        <div class="bg-white text-primary px-3 py-1 rounded shadow-sm">
+          <small class="text-uppercase fw-bold d-block" style="font-size: 0.7rem;">Total Neto</small>
+          <span class="fs-5 fw-bold">S/ {{ totalGeneral | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-body p-4">
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        
+        <h6 class="text-muted text-uppercase fw-bold mb-3 small"><i class="bi bi-info-circle me-1"></i> Información General</h6>
+        
+        <div class="row g-3 mb-4">
+          <div class="col-md-12">
+            <div class="card bg-light border-primary border-opacity-25">
+                <div class="card-body py-2 px-3 d-flex align-items-center">
+                    <i class="bi bi-box-seam text-primary fs-3 me-3"></i>
+                    <div class="flex-grow-1">
+                        <label class="form-label mb-0 fw-bold text-primary">Vincular Producción (Packing List)</label>
+                        <select class="form-select form-select-sm border-primary mt-1" 
+                                formControlName="packing_id" 
+                                (change)="onPackingChange($event)">
+                            <option value="">-- Selección Manual (Sin Packing) --</option>
+                            <option *ngFor="let p of packings" [value]="p.id">
+                                Packing #{{ p.id }} | {{ p.fecha | date:'dd/MM/yyyy' }} | {{ p.cliente_nombre }}
+                            </option>
+                        </select>
+                    </div>
+                    <div class="ms-3 text-end d-none d-md-block">
+                        <small class="text-muted d-block" style="line-height: 1.2;">Al seleccionar, se cargarán<br>los items automáticamente.</small>
+                    </div>
+                </div>
+            </div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label fw-bold">Cliente <span class="text-danger">*</span></label>
+            <select class="form-select" formControlName="cliente_id" 
+                    [class.is-invalid]="form.get('cliente_id')?.invalid && form.get('cliente_id')?.touched">
+              <option value="">-- Seleccionar Cliente --</option>
+              <option *ngFor="let c of clientes" [value]="c.id">{{ c.razon_social }}</option>
+            </select>
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label fw-bold">N° Factura <span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="factura_nro" placeholder="F001-000001"
+                   [class.is-invalid]="form.get('factura_nro')?.invalid && form.get('factura_nro')?.touched">
+          </div>
+
+          <div class="col-md-3">
+            <label class="form-label fw-bold">Fecha Emisión <span class="text-danger">*</span></label>
+            <input type="date" class="form-control" formControlName="fecha">
+          </div>
+        </div>
+
+        <div class="row g-3 mb-4">
+            <div class="col-md-3">
+                <label class="form-label">Guía Remisión</label>
+                <div class="input-group">
+                    <span class="input-group-text"><i class="bi bi-truck"></i></span>
+                    <input type="text" class="form-control" formControlName="guia_nro" placeholder="T001-...">
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label">Descripción / Observación</label>
+                <input type="text" class="form-control" formControlName="descripcion" placeholder="Ej: Venta de madera Tornillo selecta...">
+            </div>
+            <div class="col-md-3 d-flex gap-2">
+                <div class="flex-grow-1">
+                    <label class="form-label small text-muted">IGV (0.18)</label>
+                    <input type="number" class="form-control form-control-sm text-center" formControlName="igv_pct" step="0.01">
+                </div>
+                <div class="flex-grow-1">
+                    <label class="form-label small text-muted">Detracción</label>
+                    <input type="number" class="form-control form-control-sm text-center" formControlName="detraccion_pct" step="0.01">
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between align-items-center mb-2 mt-5 border-bottom pb-2">
+            <h6 class="text-muted text-uppercase fw-bold mb-0"><i class="bi bi-list-check me-1"></i> Detalle de Venta</h6>
+            <button type="button" class="btn btn-sm btn-outline-primary" (click)="agregarItem()">
+                <i class="bi bi-plus-lg"></i> Agregar Línea
+            </button>
+        </div>
+        
+        <div class="table-responsive shadow-sm rounded border mb-4">
+          <table class="table table-hover align-middle mb-0">
+            <thead class="bg-light text-secondary small text-uppercase">
+              <tr>
+                <th style="min-width: 250px;" class="ps-3">Producto / Descripción</th>
+                <th style="width: 120px;">Cant. (PT)</th>
+                <th style="width: 140px;">P. Unit (S/)</th>
+                <th style="width: 140px;" class="text-end">Subtotal</th>
+                <th style="width: 60px;" class="text-center"><i class="bi bi-trash"></i></th>
+              </tr>
+            </thead>
+            <tbody formArrayName="items">
+              <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+                <td class="ps-3">
+                    <input type="text" class="form-control form-control-sm border-0 fw-bold" 
+                           formControlName="producto" placeholder="Descripción del item...">
+                </td>
+                
+                <td>
+                    <input type="number" class="form-control form-control-sm text-center" 
+                           formControlName="cantidad" min="0" step="0.01">
+                </td>
+                
+                <td>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text border-0 bg-transparent text-muted">S/</span>
+                        <input type="number" class="form-control form-control-sm text-end" 
+                               formControlName="precio_unit" min="0" step="0.01">
+                    </div>
+                </td>
+                
+                <td class="text-end pe-3">
+                    <span class="fw-bold text-dark">
+                        {{ item.get('total_item')?.value | number:'1.2-2' }}
+                    </span>
+                </td>
+                
+                <td class="text-center">
+                  <button type="button" class="btn btn-link text-danger p-0" (click)="eliminarItem(i)" title="Quitar fila">
+                    <i class="bi bi-x-circle-fill"></i>
+                  </button>
+                </td>
+              </tr>
+              
+              <tr *ngIf="items.controls.length === 0">
+                  <td colspan="5" class="text-center py-4 text-muted fst-italic">
+                      <i class="bi bi-basket me-2"></i> No hay productos agregados. Selecciona un Packing o agrega manualmente.
+                  </td>
+              </tr>
+            </tbody>
+            <tfoot class="bg-light">
+                <tr>
+                    <td colspan="3" class="text-end fw-bold pt-3">TOTAL OPERACIÓN:</td>
+                    <td class="text-end fw-bold fs-5 text-primary pe-3 pt-2">S/ {{ totalGeneral | number:'1.2-2' }}</td>
+                    <td></td>
+                </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <div class="d-flex justify-content-end gap-3 pt-3 border-top">
+          <a routerLink="/facturacion" class="btn btn-light border px-4">
+            <i class="bi bi-arrow-left me-2"></i>Cancelar
+          </a>
+          <button type="submit" class="btn px-4 fw-bold shadow-sm" 
+                  [ngClass]="isEditMode ? 'btn-warning text-dark' : 'btn-success text-white'" 
+                  [disabled]="form.invalid || items.length === 0">
+            <i class="bi" [ngClass]="isEditMode ? 'bi-pencil-square' : 'bi-save'"></i>
+            {{ isEditMode ? 'Actualizar Factura' : 'Emitir Factura' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

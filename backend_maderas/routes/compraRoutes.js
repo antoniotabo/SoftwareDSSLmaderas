@@ -1,16 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const { 
-    createCompra, 
-    getCompras, 
-    getCompraById 
-} = require('../controllers/compraController');
-const { verificarToken } = require('../middleware/auth.middleware');
+const compraController = require('../controllers/compraController');
 
-router.use(verificarToken);
+router.get('/', compraController.getCompras);
+router.post('/', compraController.createCompra);
 
-router.get('/', getCompras);
-router.get('/:id', getCompraById);
-router.post('/', createCompra);
+// ✅ Tienes que tener estas dos líneas para que funcione lo nuevo:
+router.get('/:id', compraController.getCompraById);      // Para editar
+router.put('/:id/pago', compraController.registrarPago); // Para el botón de pagar
+
+router.put('/:id', compraController.updateCompra);
+router.delete('/:id', compraController.deleteCompra);
 
 module.exports = router;

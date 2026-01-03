@@ -1,0 +1,128 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-0">Gestión de Compras (Madera)</h3>
+      <p class="text-muted small">Registro de materia prima y gastos</p>
+    </div>
+    <a routerLink="/compras/nueva" class="btn btn-primary shadow-sm">
+      <i class="bi bi-plus-lg me-2"></i>Nueva Compra
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-light text-secondary text-uppercase small">
+            <tr>
+              <th class="ps-4 py-3">Fecha</th>
+              <th class="py-3">Proveedor</th>
+              <th class="py-3">Producto</th>
+              <th class="text-end py-3">Cant. (PT)</th>
+              <th class="text-end py-3">Precio</th>
+              <th class="text-end py-3">Total</th>
+              <th class="text-end py-3">Saldo</th>
+              <th class="text-center py-3">Estado</th>
+              <th class="text-end pe-4 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let c of compras">
+              <td class="ps-4">{{ c.fecha | date:'dd/MM/yyyy' }}</td>
+              <td class="fw-bold text-dark">{{ c.proveedor_nombre }}</td>
+              <td class="text-muted">{{ c.tipo_producto }}</td>
+              <td class="text-end">{{ c.cantidad_pt | number:'1.2-2' }}</td>
+              <td class="text-end">S/ {{ c.precio_pt | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold text-success">S/ {{ c.total_compra | number:'1.2-2' }}</td>
+              <td class="text-end fw-bold" [ngClass]="c.total_pendiente > 0 ? 'text-danger' : 'text-muted'">
+                  S/ {{ c.total_pendiente | number:'1.2-2' }}
+              </td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="c.estado === 'PENDIENTE' ? 'bg-warning text-dark' : 'bg-success'">
+                  {{ c.estado }}
+                </span>
+              </td>
+              <td class="text-end pe-4">
+                
+                <button *ngIf="c.estado === 'PENDIENTE'" 
+                        class="btn btn-sm btn-success me-1" 
+                        (click)="abrirModalPago(c)" 
+                        title="Amortizar / Pagar Saldo">
+                    <i class="bi bi-cash-stack"></i>
+                </button>
+
+                <button class="btn btn-sm btn-outline-secondary me-1" (click)="descargarPDF(c)" title="PDF">
+                    <i class="bi bi-file-earmark-pdf"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-primary me-1" (click)="editar(c.id)" title="Editar Todo">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="eliminar(c.id)" title="Eliminar">
+                    <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="compras.length === 0">
+              <td colspan="9" class="text-center py-5 text-muted">
+                <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                No hay registros encontrados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="modalPago" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header bg-success text-white">
+        <h5 class="modal-title fw-bold"><i class="bi bi-wallet2 me-2"></i>Registrar Pago</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      
+      <div class="modal-body p-4" *ngIf="compraSeleccionada">
+        
+        <div class="alert alert-light border text-center mb-4">
+            <h6 class="text-dark fw-bold mb-1">{{ compraSeleccionada.proveedor_nombre }}</h6>
+            <small class="text-muted">{{ compraSeleccionada.tipo_producto }}</small>
+        </div>
+
+        <div class="row g-2 text-center mb-4">
+            <div class="col-4">
+                <small class="text-muted d-block">Total</small>
+                <span class="fw-bold">S/ {{ compraSeleccionada.total_compra | number:'1.2-2' }}</span>
+            </div>
+            <div class="col-4 border-start border-end">
+                <small class="text-muted d-block">Pagado</small>
+                <span class="text-success fw-bold">S/ {{ compraSeleccionada.anticipo | number:'1.2-2' }}</span>
+            </div>
+            <div class="col-4">
+                <small class="text-danger d-block fw-bold">Pendiente</small>
+                <span class="text-danger fw-bold fs-5">S/ {{ compraSeleccionada.total_pendiente | number:'1.2-2' }}</span>
+            </div>
+        </div>
+
+        <label class="form-label fw-bold">Monto a Pagar Ahora</label>
+        <div class="input-group input-group-lg mb-2">
+            <span class="input-group-text bg-success text-white border-success">S/</span>
+            <input type="number" class="form-control border-success text-success fw-bold" 
+                   [(ngModel)]="montoPagar" placeholder="0.00">
+        </div>
+        <div class="d-flex justify-content-between">
+            <small class="text-muted">Ingrese el monto del abono.</small>
+            <button class="btn btn-link btn-sm p-0 text-decoration-none" (click)="pagarTodo()">Pagar Todo el Saldo</button>
+        </div>
+
+      </div>
+      <div class="modal-footer bg-light">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success fw-bold px-4" (click)="guardarPago()">
+            <i class="bi bi-check-circle-fill me-2"></i>Confirmar Pago
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,20 +1,21 @@
-require('dotenv').config(); // Cargar variables de entorno primero
+require('dotenv').config(); // Cargar variables de entorno
 const express = require('express');
 const cors = require('cors');
 
 // ==========================================
-// 1. IMPORTACIÓN DE RUTAS (Todos los módulos)
+// 1. IMPORTACIÓN DE RUTAS
 // ==========================================
 const authRoutes = require('./routes/authRoutes');
 const usuarioRoutes = require('./routes/usuarioRoutes');
 const clienteRoutes = require('./routes/clienteRoutes');
-const proveedorRoutes = require('./routes/proveedorRoutes');
+const proveedorRoutes = require('./routes/proveedorRoutes'); // ✅ Correcto
 const transportistaRoutes = require('./routes/transportistaRoutes');
 const packingRoutes = require('./routes/packingRoutes');
 const facturaRoutes = require('./routes/facturaRoutes');
 const compraRoutes = require('./routes/compraRoutes');
 const fleteRoutes = require('./routes/fleteRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
+const inventoryRoutes = require('./routes/inventoryRoutes');
 
 // ==========================================
 // 2. CONFIGURACIÓN DEL SERVIDOR
@@ -25,37 +26,38 @@ const PORT = process.env.PORT || 3000;
 // ==========================================
 // 3. MIDDLEWARES GLOBALES
 // ==========================================
-app.use(cors()); // Permite que Angular se conecte sin bloqueos
-app.use(express.json()); // Permite recibir datos JSON en el body (POST/PUT)
-app.use(express.urlencoded({ extended: true })); // Permite recibir datos de formularios urlencoded
+app.use(cors()); // Permite conexiones desde Angular
+app.use(express.json()); // Permite JSON en el body
+app.use(express.urlencoded({ extended: true })); // Permite datos de formularios
 
 // ==========================================
 // 4. DEFINICIÓN DE ENDPOINTS (API)
 // ==========================================
 
-// Seguridad y Usuarios
+// --- SEGURIDAD Y USUARIOS ---
 app.use('/api/auth', authRoutes);           // Login y Registro
 app.use('/api/usuarios', usuarioRoutes);    // Gestión de usuarios (Admin)
 
-// Mantenimiento (Tablas Maestras)
+// --- MANTENIMIENTO (TABLAS MAESTRAS) ---
 app.use('/api/clientes', clienteRoutes);
-app.use('/api/proveedores', proveedorRoutes);
+app.use('/api/proveedores', proveedorRoutes); // ✅ Ruta clave para tu nuevo módulo
 app.use('/api/transportistas', transportistaRoutes);
 
-// Operaciones Principales
+// --- OPERACIONES PRINCIPALES ---
 app.use('/api/packing', packingRoutes);     // Producción (Maderas)
 app.use('/api/facturas', facturaRoutes);    // Ventas y Cobranzas
 app.use('/api/compras', compraRoutes);      // Compras y Gastos
 app.use('/api/fletes', fleteRoutes);        // Logística
+app.use('/api', inventoryRoutes); // Ajusté esto para que sea /api/inventario (más ordenado)
 
-// Reportes
+// --- REPORTES ---
 app.use('/api/dashboard', dashboardRoutes); // Gráficos y Resumen
 
 // ==========================================
 // 5. RUTAS DE UTILIDAD
 // ==========================================
 
-// Ruta raíz (Para verificar que el server responde)
+// Ruta raíz (Ping)
 app.get('/', (req, res) => {
     res.json({
         sistema: "Software DSSL Maderas - API REST",
@@ -69,7 +71,7 @@ app.get('/', (req, res) => {
 app.use((req, res) => {
     res.status(404).json({ 
         success: false, 
-        mensaje: "⚠️ La ruta solicitada no existe en esta API" 
+        mensaje: "⚠️ La ruta solicitada no existe en esta API. Verifica tu URL." 
     });
 });
 

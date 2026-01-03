@@ -1,0 +1,56 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+      <h3 class="fw-bold mb-0">Directorio de Transportistas</h3>
+      <p class="text-muted small">Gestión de empresas de transporte</p>
+    </div>
+    <a routerLink="/transportistas/nuevo" class="btn btn-primary shadow-sm">
+      <i class="bi bi-truck me-2"></i>Nuevo
+    </a>
+  </div>
+
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="bg-light text-secondary small text-uppercase">
+            <tr>
+              <th class="ps-4 py-3">Razón Social / Nombre</th>
+              <th class="py-3">RUC</th>
+              <th class="py-3">Contacto / Email</th>
+              <th class="text-center py-3">Estado</th>
+              <th class="text-end pe-4 py-3">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let t of transportistas">
+              <td class="ps-4 fw-bold text-dark">{{ t.nombre }}</td>
+              <td>
+                <span class="badge bg-light text-dark border">{{ t.ruc }}</span>
+              </td>
+              <td class="text-muted">{{ t.contacto || '---' }}</td>
+              <td class="text-center">
+                <span class="badge" [ngClass]="t.estado === 'ACTIVO' ? 'bg-success' : 'bg-secondary'">
+                  {{ t.estado }}
+                </span>
+              </td>
+              <td class="text-end pe-4">
+                <button class="btn btn-sm btn-outline-primary me-2" (click)="editar(t.id)" title="Editar">
+                  <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-danger" (click)="eliminar(t.id)" title="Eliminar">
+                  <i class="bi bi-trash"></i>
+                </button>
+              </td>
+            </tr>
+            <tr *ngIf="transportistas.length === 0">
+              <td colspan="5" class="text-center py-5 text-muted">
+                No hay transportistas registrados.
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>

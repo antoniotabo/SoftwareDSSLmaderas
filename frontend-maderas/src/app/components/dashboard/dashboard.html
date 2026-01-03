@@ -1,41 +1,350 @@
-<div class="container-fluid">
-    <h2 class="mb-4 text-dark fw-bold">📊 Tablero Principal</h2>
-    
-    <div class="row g-4">
-        <div class="col-md-4">
-            <div class="card text-white bg-primary h-100 shadow">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title">Clientes Activos</h5>
-                        <h2 class="display-4 fw-bold">{{ totalClientes }}</h2>
-                    </div>
-                    <i class="bi bi-people-fill" style="font-size: 3rem;"></i>
-                </div>
+<div class="container-fluid pb-5">
+
+    <div *ngIf="isGerente; else employeeView">
+        
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+            <div>
+                <h2 class="text-dark fw-bold mb-0">
+                    <i class="bi bi-grid-1x2-fill me-2 text-primary"></i>Centro de Control
+                </h2>
+                <p class="text-muted mb-0 small">
+                    {{ fechaActual | date:'EEEE, d \'de\' MMMM, yyyy' }}
+                </p>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <a routerLink="/compras/nueva" class="btn btn-outline-danger shadow-sm fw-bold">
+                    <i class="bi bi-cart-plus me-2"></i>Gasto
+                </a>
+                <a routerLink="/facturacion/nueva" class="btn btn-outline-success shadow-sm fw-bold">
+                    <i class="bi bi-currency-dollar me-2"></i>Venta
+                </a>
+                <button class="btn btn-primary shadow-sm" (click)="recargar()" [disabled]="loading">
+                    <i class="bi bi-arrow-clockwise me-1"></i>
+                </button>
             </div>
         </div>
 
-        <div class="col-md-4">
-            <div class="card text-white bg-success h-100 shadow">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title">Packings Registrados</h5>
-                        <h2 class="display-4 fw-bold">{{ totalPackings }}</h2>
-                    </div>
-                    <i class="bi bi-tree-fill" style="font-size: 3rem;"></i>
-                </div>
-            </div>
+        <div *ngIf="loading" class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted fw-bold">Analizando datos en tiempo real...</p>
         </div>
 
-        <div class="col-md-4">
-            <div class="card text-white bg-warning h-100 shadow">
-                <div class="card-body d-flex justify-content-between align-items-center">
-                    <div>
-                        <h5 class="card-title">Ventas del Mes</h5>
-                        <h2 class="display-4 fw-bold">S/ 0.00</h2>
+        <div *ngIf="!loading" class="fade-in">
+            
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-3">
+                    <div class="card bg-success text-white h-100 shadow-sm border-0 position-relative overflow-hidden">
+                        <div class="card-body">
+                            <small class="text-white-50 text-uppercase fw-bold">Ingresos (Mes)</small>
+                            <h3 class="fw-bold mb-0">S/ {{ stats.ventasMes | number:'1.2-2' }}</h3>
+                            <small class="text-white-50">Ticket Prom: S/ {{ stats.ticketPromedio | number:'1.0-0' }}</small>
+                        </div>
+                        <i class="bi bi-graph-up position-absolute end-0 bottom-0 mb-2 me-3 opacity-25" style="font-size: 3rem;"></i>
                     </div>
-                    <i class="bi bi-cash-coin" style="font-size: 3rem;"></i>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="card bg-danger text-white h-100 shadow-sm border-0 position-relative overflow-hidden">
+                        <div class="card-body">
+                            <small class="text-white-50 text-uppercase fw-bold">Egresos (Mes)</small>
+                            <h3 class="fw-bold mb-0">S/ {{ stats.gastosMes | number:'1.2-2' }}</h3>
+                            <small class="text-white-50">Madera y Logística</small>
+                        </div>
+                        <i class="bi bi-cart-x position-absolute end-0 bottom-0 mb-2 me-3 opacity-25" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="card text-white h-100 shadow-sm border-0 position-relative overflow-hidden"
+                        [ngClass]="stats.balanceMes >= 0 ? 'bg-primary' : 'bg-dark'">
+                        <div class="card-body">
+                            <small class="text-white-50 text-uppercase fw-bold">Flujo Neto</small>
+                            <h3 class="fw-bold mb-0">S/ {{ stats.balanceMes | number:'1.2-2' }}</h3>
+                            <small class="text-white-50">{{ stats.balanceMes >= 0 ? 'En verde' : 'En rojo' }}</small>
+                        </div>
+                        <i class="bi bi-wallet2 position-absolute end-0 bottom-0 mb-2 me-3 opacity-25" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+
+                <div class="col-12 col-md-3">
+                    <div class="card bg-warning text-dark h-100 shadow-sm border-0 position-relative overflow-hidden">
+                        <div class="card-body">
+                            <small class="text-dark text-opacity-75 text-uppercase fw-bold">Producción Hoy</small>
+                            <h3 class="fw-bold mb-0">{{ stats.packingsHoy }} <span class="fs-6">lotes</span></h3>
+                            <small class="text-dark text-opacity-75">Total: {{ stats.totalPackings }}</small>
+                        </div>
+                        <i class="bi bi-box-seam position-absolute end-0 bottom-0 mb-2 me-3 opacity-25" style="font-size: 3rem;"></i>
+                    </div>
                 </div>
             </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-12 col-md-4">
+                    <div class="card shadow-sm border-0 border-start border-4 border-info h-100">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted text-uppercase fw-bold">Stock Total Almacén</small>
+                                <h3 class="mb-0 fw-bold text-dark">{{ stockStats.totalPT | number:'1.2-2' }} <small class="fs-6 text-muted">PT</small></h3>
+                            </div>
+                            <div class="bg-info bg-opacity-10 p-3 rounded-circle text-info">
+                                <i class="bi bi-layers-fill fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card shadow-sm border-0 border-start border-4 border-primary h-100">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted text-uppercase fw-bold">Especies Variadas</small>
+                                <h3 class="mb-0 fw-bold text-dark">{{ stockStats.cantidadEspecies }} <small class="fs-6 text-muted">tipos</small></h3>
+                            </div>
+                            <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                                <i class="bi bi-tags-fill fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-12 col-md-4">
+                    <div class="card shadow-sm border-0 border-start border-4 border-warning h-100">
+                        <div class="card-body d-flex justify-content-between align-items-center">
+                            <div>
+                                <small class="text-muted text-uppercase fw-bold">Alertas Stock Bajo</small>
+                                <h3 class="mb-0 fw-bold text-dark">{{ stockStats.alertasBajo }} <small class="fs-6 text-muted">ítems</small></h3>
+                            </div>
+                            <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
+                                <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-8">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3 border-bottom-0">
+                            <h5 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history me-2 text-primary"></i>Evolución Financiera</h5>
+                            <small class="text-muted">Ordenado del mes actual hacia atrás</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table align-middle mb-0 table-striped-columns">
+                                    <thead class="text-secondary small text-uppercase bg-light">
+                                        <tr>
+                                            <th class="ps-4 border-0">Mes</th>
+                                            <th class="border-0" style="width: 35%;">Tendencia</th>
+                                            <th class="text-end border-0 text-success">Ingreso</th>
+                                            <th class="text-end border-0 text-danger">Gasto</th>
+                                            <th class="text-end border-0 pe-4">Neto</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr *ngFor="let h of historial">
+                                            <td class="fw-bold ps-4 text-primary">{{ h.etiqueta }}</td>
+                                            <td>
+                                                <div class="d-flex align-items-center mb-1">
+                                                    <div class="progress flex-grow-1 shadow-sm" style="height: 8px; background-color: #e9ecef;">
+                                                        <div class="progress-bar bg-gradient-success" role="progressbar" [style.width.%]="h.porcentaje"></div>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td class="text-end text-success fw-bold">S/ {{ h.ventas | number:'1.0-0' }}</td>
+                                            <td class="text-end text-danger small">S/ {{ h.gastos | number:'1.0-0' }}</td>
+                                            <td class="text-end pe-4 fw-bold" [ngClass]="h.balance >= 0 ? 'text-dark' : 'text-danger'">
+                                                S/ {{ h.balance | number:'1.0-0' }}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-dark text-white py-3 border-bottom-0">
+                            <h5 class="fw-bold mb-0 text-warning"><i class="bi bi-trophy-fill me-2"></i>Top Clientes</h5>
+                            <small class="text-white-50">Líderes de compra histórica</small>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="list-group list-group-flush">
+                                <div *ngFor="let c of stats.topClientes; let i = index" class="list-group-item d-flex align-items-center p-3">
+                                    <div class="me-3 position-relative">
+                                        <i *ngIf="i===0" class="bi bi-award-fill text-warning fs-1"></i>
+                                        <i *ngIf="i===1" class="bi bi-award-fill text-secondary fs-2 opacity-75"></i>
+                                        <i *ngIf="i===2" class="bi bi-award-fill text-danger fs-3 opacity-50" style="color: #cd7f32 !important;"></i>
+                                    </div>
+                                    <div class="flex-grow-1">
+                                        <h6 class="mb-0 fw-bold text-dark">{{ c.nombre }}</h6>
+                                        <small class="text-muted">Cliente VIP</small>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="d-block fw-bold text-success">S/ {{ c.total | number:'1.0-0' }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-12">
+                    <div class="card shadow-sm border-0">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-tree me-2 text-success"></i> Top Stock en Almacén</h6>
+                            <a routerLink="/inventario" class="btn btn-sm btn-light text-primary small">Ver Kardex Completo</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light small text-uppercase">
+                                    <tr>
+                                        <th class="ps-4">Especie / Producto</th>
+                                        <th>Ubicación</th>
+                                        <th class="text-end pe-4">Stock Disponible (PT)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let s of stockStats.topStock">
+                                        <td class="ps-4 fw-bold text-dark">{{ s.especie }} <small class="text-muted">{{ s.tipo_madera }}</small></td>
+                                        <td><span class="badge bg-light text-dark border">{{ s.ubicacion }}</span></td>
+                                        <td class="text-end pe-4 fw-bold text-primary">{{ s.cantidad_pt | number:'1.2-2' }}</td>
+                                    </tr>
+                                    <tr *ngIf="stockStats.topStock.length === 0">
+                                        <td colspan="3" class="text-center py-3 text-muted">No hay stock registrado.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-lg-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-receipt me-2 text-info"></i> Últimas Facturas</h6>
+                            <a routerLink="/facturacion" class="btn btn-sm btn-light text-primary small">Ver todas</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3">N°</th>
+                                        <th>Cliente</th>
+                                        <th>Estado</th>
+                                        <th class="text-end pe-3">Total</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let f of stats.ultimasFacturas">
+                                        <td class="ps-3 fw-bold small">{{ f.factura_nro || '---' }}</td>
+                                        <td class="small text-truncate" style="max-width: 120px;">{{ f.cliente_nombre }}</td>
+                                        <td><span class="badge" [ngClass]="getBadgeClass(f.estado)" style="font-size: 0.7rem;">{{ f.estado }}</span></td>
+                                        <td class="text-end pe-3 fw-bold small text-success">S/ {{ f.total_calculado | number:'1.2-2' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-6">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="mb-0 fw-bold"><i class="bi bi-box-seam me-2 text-warning"></i> Últimos Packings</h6>
+                            <a routerLink="/packing" class="btn btn-sm btn-light text-primary small">Ver todos</a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="bg-light small text-uppercase">
+                                    <tr>
+                                        <th class="ps-3">Fecha</th>
+                                        <th>Cliente</th>
+                                        <th class="text-end pe-3">Total PT</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr *ngFor="let p of stats.ultimosPackings">
+                                        <td class="ps-3 small">{{ p.fecha | date:'dd/MM' }}</td>
+                                        <td class="small text-truncate" style="max-width: 140px;">{{ p.cliente_nombre }}</td>
+                                        <td class="text-end pe-3 fw-bold small">{{ p.total_pt | number:'1.2-2' }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </div>
+
+    <ng-template #employeeView>
+        <div class="row justify-content-center align-items-center" style="min-height: 70vh;">
+            <div class="col-md-8 text-center fade-in">
+                
+                <div class="mb-4">
+                    <div class="bg-white d-inline-block p-4 rounded-circle shadow-sm border">
+                        <i class="bi bi-tree-fill text-success" style="font-size: 4rem;"></i>
+                    </div>
+                </div>
+
+                <h1 class="display-5 fw-bold text-dark mb-2">¡Bienvenido, {{ nombreUsuario }}!</h1>
+                <p class="lead text-muted mb-5">
+                    Sistema de Gestión Operativa DSSL Maderas.<br>
+                    Selecciona un módulo para comenzar tus labores.
+                </p>
+
+                <div class="row g-4 justify-content-center">
+                    <div class="col-md-4 col-sm-6">
+                        <a routerLink="/packing" class="card card-hover text-decoration-none shadow-sm h-100 border-0 bg-white">
+                            <div class="card-body text-center p-4">
+                                <div class="bg-warning bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                    <i class="bi bi-box-seam text-warning fs-1"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">Producción</h5>
+                                <small class="text-muted">Gestión de Packing</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 col-sm-6">
+                        <a routerLink="/inventario" class="card card-hover text-decoration-none shadow-sm h-100 border-0 bg-white">
+                            <div class="card-body text-center p-4">
+                                <div class="bg-info bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                    <i class="bi bi-clipboard-data text-info fs-1"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">Inventario</h5>
+                                <small class="text-muted">Kardex y Stock</small>
+                            </div>
+                        </a>
+                    </div>
+                    <div class="col-md-4 col-sm-6">
+                        <a routerLink="/fletes" class="card card-hover text-decoration-none shadow-sm h-100 border-0 bg-white">
+                            <div class="card-body text-center p-4">
+                                <div class="bg-secondary bg-opacity-10 p-3 rounded-circle d-inline-block mb-3">
+                                    <i class="bi bi-truck text-secondary fs-1"></i>
+                                </div>
+                                <h5 class="fw-bold text-dark mb-1">Fletes</h5>
+                                <small class="text-muted">Logística</small>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </ng-template>
+
 </div>
+
+<style>
+    .bg-gradient-success { background: linear-gradient(90deg, #198754 0%, #20c997 100%); }
+    .fade-in { animation: fadeIn 0.5s ease-out; }
+    .card-hover { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .card-hover:hover { transform: translateY(-5px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>

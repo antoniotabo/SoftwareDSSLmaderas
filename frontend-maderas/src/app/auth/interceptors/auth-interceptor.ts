@@ -3,21 +3,20 @@ import { inject } from '@angular/core';
 import { AuthService } from '../../services/auth.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
-  // Inyectamos el servicio de autenticación
   const authService = inject(AuthService);
   
-  // Obtenemos el token actual (si existe)
-  const token = authService.token;
+  // CORRECCIÓN AQUÍ:
+  // Agregamos paréntesis () para ejecutar la función
+  const token = authService.getToken();
 
-  // Si hay token, clonamos la petición y le pegamos la cabecera
   if (token) {
-    req = req.clone({
-      setHeaders: { 
-        Authorization: `Bearer ${token}` 
+    const cloned = req.clone({
+      setHeaders: {
+        Authorization: `Bearer ${token}`
       }
     });
+    return next(cloned);
   }
 
-  // Dejamos pasar la petición (con o sin token)
   return next(req);
 };

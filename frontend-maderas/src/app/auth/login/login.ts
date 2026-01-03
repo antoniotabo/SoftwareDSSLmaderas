@@ -24,9 +24,14 @@ export class LoginComponent {
   onSubmit() {
     if (this.loginForm.invalid) return;
     
-    this.auth.login(this.loginForm.value as any).subscribe({
+    // 1. Extraemos los valores individuales del formulario
+    const formValue = this.loginForm.value;
+    const email = formValue.email || '';
+    const password = formValue.password || '';
+
+    // 2. Pasamos los argumentos separados por coma (email, password)
+    this.auth.login(email, password).subscribe({
       next: () => {
-        // Alerta de éxito suave
         const Toast = Swal.mixin({
           toast: true, position: 'top-end', showConfirmButton: false, timer: 3000
         });

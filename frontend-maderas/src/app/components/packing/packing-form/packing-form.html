@@ -1,95 +1,183 @@
-<div class="container-fluid">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h3>📄 Nuevo Packing</h3>
-        <a routerLink="/packing" class="btn btn-outline-secondary">Cancelar</a>
+<div class="container-fluid py-4">
+  <div class="card shadow">
+    <div class="card-body">
+      <h2 class="card-title mb-4">Nuevo Packing</h2>
+
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+        <!-- Cabecera -->
+        <div class="row g-3 mb-4">
+          <!-- Cliente -->
+          <div class="col-md-4">
+            <label class="form-label">Cliente</label>
+            <select 
+              formControlName="cliente_id" 
+              class="form-select"
+              required>
+              <option value="">Seleccione cliente</option>
+              <option *ngFor="let c of clientes" [value]="c.id">
+                {{ c.razon_social }}
+              </option>
+            </select>
+          </div>
+
+          <!-- Fecha -->
+          <div class="col-md-2">
+            <label class="form-label">Fecha</label>
+            <input 
+              type="date" 
+              formControlName="fecha" 
+              class="form-control"
+              required>
+          </div>
+
+          <!-- Especie -->
+          <div class="col-md-2">
+            <label class="form-label">Especie</label>
+            <input 
+              type="text" 
+              formControlName="especie" 
+              class="form-control"
+              placeholder="cachimbo">
+          </div>
+
+          <!-- Tipo de Madera -->
+          <div class="col-md-2">
+            <label class="form-label">Tipo de Madera</label>
+            <input 
+              type="text" 
+              formControlName="tipo_madera" 
+              class="form-control"
+              placeholder="deking">
+          </div>
+
+          <!-- Observaciones -->
+          <div class="col-md-2">
+            <label class="form-label">Observación</label>
+            <input 
+              type="text" 
+              formControlName="observaciones" 
+              class="form-control"
+              placeholder="toodo ok">
+          </div>
+        </div>
+
+        <!-- Detalle de Madera -->
+        <h4 class="mb-3">Detalle de Madera</h4>
+        
+        <!-- Tabla de Items -->
+        <div class="table-responsive mb-3">
+          <table class="table table-bordered table-hover">
+            <thead class="table-light">
+              <tr>
+                <th>Especie</th>
+                <th>Cant.</th>
+                <th>Esp (")</th>
+                <th>Ancho (")</th>
+                <th>Largo (')</th>
+                <th>PT (Vol)</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody formArrayName="items">
+              <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
+                <!-- Categoría/Especie -->
+                <td>
+                  <input 
+                    type="text" 
+                    formControlName="categoria"
+                    class="form-control form-control-sm"
+                    placeholder="cachimbo">
+                </td>
+
+                <!-- Cantidad de Piezas -->
+                <td style="width: 100px;">
+                  <input 
+                    type="number" 
+                    formControlName="cantidad_piezas"
+                    class="form-control form-control-sm text-end"
+                    min="1"
+                    step="1">
+                </td>
+
+                <!-- Espesor (pulgadas) -->
+                <td style="width: 100px;">
+                  <input 
+                    type="number" 
+                    formControlName="e"
+                    class="form-control form-control-sm text-end"
+                    min="0.001"
+                    step="0.001">
+                </td>
+
+                <!-- Ancho (pulgadas) -->
+                <td style="width: 100px;">
+                  <input 
+                    type="number" 
+                    formControlName="a"
+                    class="form-control form-control-sm text-end"
+                    min="0.001"
+                    step="0.001">
+                </td>
+
+                <!-- Largo (pies) -->
+                <td style="width: 100px;">
+                  <input 
+                    type="number" 
+                    formControlName="l"
+                    class="form-control form-control-sm text-end"
+                    min="0.001"
+                    step="0.001">
+                </td>
+
+                <!-- Volumen PT (calculado) -->
+                <td class="text-end fw-bold">
+                  {{ item.get('volumen_pt')?.value | number:'1.2-2' }}
+                </td>
+
+                <!-- Botón Eliminar -->
+                <td class="text-center" style="width: 60px;">
+                  <button 
+                    type="button"
+                    (click)="eliminarItem(i)"
+                    class="btn btn-danger btn-sm">
+                    ✕
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Botón Agregar Fila -->
+        <button 
+          type="button"
+          (click)="agregarItem()"
+          class="btn btn-outline-primary mb-4">
+          <span class="fs-5">+</span> Agregar Fila
+        </button>
+
+        <!-- Total PT -->
+        <div class="alert alert-warning d-flex justify-content-between align-items-center mb-4">
+          <span class="fw-bold">Total PT:</span>
+          <span class="fs-4 fw-bold">{{ totalPT | number:'1.2-2' }}</span>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="d-flex justify-content-end gap-2">
+          <button 
+            type="button"
+            routerLink="/packing"
+            class="btn btn-outline-secondary">
+            Cancelar
+          </button>
+          <button 
+            type="submit"
+            [disabled]="form.invalid"
+            class="btn btn-success">
+            <i class="bi bi-save"></i> Guardar Packing
+          </button>
+        </div>
+      </form>
     </div>
-
-    <form [formGroup]="form" (ngSubmit)="guardar()">
-        <div class="card mb-4 shadow-sm">
-            <div class="card-body">
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Cliente</label>
-                        <select class="form-select" formControlName="cliente_id">
-                            <option value="">-- Seleccione Cliente --</option>
-                            <option *ngFor="let c of clientes" [value]="c.id">{{ c.razon_social }}</option>
-                        </select>
-                        <div *ngIf="form.get('cliente_id')?.invalid && form.get('cliente_id')?.touched" class="text-danger small">
-                            Requerido
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Fecha</label>
-                        <input type="date" class="form-control" formControlName="fecha">
-                    </div>
-                    <div class="col-md-4">
-                        <label class="form-label fw-bold">Observación</label>
-                        <input type="text" class="form-control" formControlName="observacion" placeholder="Opcional">
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <div class="card shadow-sm">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <span>Detalle de Madera</span>
-                <span class="badge bg-warning text-dark fs-6">Total PT: {{ totalVolumen }}</span>
-            </div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-striped mb-0 text-center align-middle">
-                        <thead class="bg-light">
-                            <tr>
-                                <th style="width: 20%">Especie</th>
-                                <th style="width: 10%">Cant.</th>
-                                <th style="width: 10%">Esp (")</th>
-                                <th style="width: 10%">Ancho (")</th>
-                                <th style="width: 10%">Largo (')</th>
-                                <th style="width: 15%">PT (Vol)</th>
-                                <th style="width: 5%"></th>
-                            </tr>
-                        </thead>
-                        <tbody formArrayName="items">
-                            <tr *ngFor="let item of items.controls; let i = index" [formGroupName]="i">
-                                <td>
-                                    <input type="text" class="form-control form-control-sm" formControlName="especie" placeholder="Ej: Cachimbo">
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" formControlName="cantidad">
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" formControlName="espesor">
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" formControlName="ancho">
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm" formControlName="largo">
-                                </td>
-                                <td>
-                                    <input type="number" class="form-control form-control-sm bg-light fw-bold text-end" formControlName="vol_pt" readonly>
-                                </td>
-                                <td>
-                                    <button type="button" class="btn btn-sm btn-danger" (click)="eliminarFila(i)" *ngIf="items.length > 1">
-                                        <i class="bi bi-x-lg"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="p-3 bg-light">
-                    <button type="button" class="btn btn-outline-primary w-100 dashed-border" (click)="agregarFila()">
-                        <i class="bi bi-plus-lg"></i> Agregar Fila
-                    </button>
-                </div>
-            </div>
-            <div class="card-footer text-end">
-                <button type="submit" class="btn btn-lg btn-success px-5">
-                    <i class="bi bi-save me-2"></i> Guardar Packing
-                </button>
-            </div>
-        </div>
-    </form>
+  </div>
 </div>

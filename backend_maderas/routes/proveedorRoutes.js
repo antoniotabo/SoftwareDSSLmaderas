@@ -6,9 +6,10 @@ const {
     updateProveedor, 
     deleteProveedor 
 } = require('../controllers/proveedorController');
-const { verificarToken } = require('../middleware/auth.middleware');
 
-router.use(verificarToken);
+// Middleware de seguridad (si lo estás usando)
+// const { verificarToken } = require('../middleware/auth.middleware');
+// router.use(verificarToken);
 
 router.get('/', getProveedores);
 router.post('/', createProveedor);

@@ -13,7 +13,9 @@
                     <th class="py-3 ps-4">ID</th>
                     <th class="py-3">Fecha</th>
                     <th class="py-3">Cliente</th>
-                    <th class="py-3">Observación</th>
+                    <th class="py-3">Especie</th>
+                    <th class="py-3">Tipo Madera</th>
+                    <th class="py-3">Observaciones</th>
                     <th class="py-3 text-end pe-4">Acciones</th>
                 </tr>
             </thead>
@@ -21,16 +23,35 @@
                 <tr *ngFor="let p of packings">
                     <td class="ps-4 fw-bold">#{{ p.id }}</td>
                     <td>{{ p.fecha | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ p.cliente || '---' }}</td>
-                    <td class="text-muted small">{{ p.observacion }}</td>
+                    
+                    <td>{{ p.cliente_nombre || 'Cliente ID: ' + p.cliente_id }}</td> 
+
+                    <td>{{ p.especie }}</td>
+                    <td>{{ p.tipo_madera }}</td>
+                    
+                    <td class="text-muted small">{{ p.observaciones || '-' }}</td>
                     <td class="text-end pe-4">
-                        <button class="btn btn-sm btn-outline-danger" (click)="eliminar(p.id)">
+                        <a [routerLink]="['/packing/editar', p.id]" 
+                           class="btn btn-sm btn-outline-primary me-2" 
+                           title="Editar Packing">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+
+                        <button class="btn btn-sm btn-outline-secondary me-2" 
+                                (click)="imprimirPDF(p)" 
+                                title="Descargar PDF">
+                            <i class="bi bi-file-earmark-pdf"></i>
+                        </button>
+
+                        <button class="btn btn-sm btn-outline-danger" 
+                                (click)="eliminar(p.id)"
+                                title="Eliminar registro">
                             <i class="bi bi-trash"></i>
                         </button>
                     </td>
                 </tr>
                 <tr *ngIf="packings.length === 0">
-                    <td colspan="5" class="text-center py-5 text-muted">
+                    <td colspan="7" class="text-center py-5 text-muted">
                         <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                         No hay registros de packing aún.
                     </td>

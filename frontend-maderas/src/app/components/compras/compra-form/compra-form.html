@@ -1,0 +1,99 @@
+<div class="container mt-4">
+  <div class="card shadow mx-auto border-0" style="max-width: 800px;">
+    
+    <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+      <div>
+        <h4 class="mb-0 fw-bold">
+          <i class="bi" [ngClass]="isEditMode ? 'bi-pencil-square' : 'bi-cart-plus'"></i>
+          {{ isEditMode ? 'Editar Compra' : 'Nueva Compra' }}
+        </h4>
+        <small class="text-white-50">Gestión de ingreso de madera</small>
+      </div>
+      <a routerLink="/compras" class="btn btn-sm btn-outline-light"><i class="bi bi-x-lg"></i></a>
+    </div>
+
+    <div class="card-body p-4">
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+
+        <div class="row g-3 mb-3">
+          <div class="col-md-8">
+            <label class="form-label fw-bold">Proveedor <span class="text-danger">*</span></label>
+            <div class="input-group">
+                <span class="input-group-text bg-white"><i class="bi bi-person-badge"></i></span>
+                <select class="form-select" formControlName="proveedor_id">
+                  <option value="" disabled selected>-- Seleccione Proveedor --</option>
+                  <option *ngFor="let p of listaProveedores" [value]="p.id">
+                    {{ p.nombre }}
+                  </option>
+                </select>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label fw-bold">Fecha Emisión</label>
+            <input type="date" class="form-control" formControlName="fecha">
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold">Descripción / Especie <span class="text-danger">*</span></label>
+          <input type="text" class="form-control" 
+                 formControlName="tipo_producto" 
+                 placeholder="Ej: TORNILLO LARGA, CUMALA BLOCKS...">
+        </div>
+
+        <h6 class="text-muted text-uppercase small border-bottom pb-2 mb-3">Detalle Financiero</h6>
+
+        <div class="row g-3 mb-4">
+          <div class="col-md-4">
+            <label class="form-label text-muted small fw-bold">Cantidad (PT)</label>
+            <input type="number" step="0.01" class="form-control fw-bold" formControlName="cantidad_pt" placeholder="0.00">
+          </div>
+          
+          <div class="col-md-4">
+            <label class="form-label text-muted small fw-bold">Precio Unit. (S/)</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0">S/</span>
+              <input type="number" step="0.01" class="form-control fw-bold border-start-0" formControlName="precio_pt" placeholder="0.00">
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <label class="form-label text-muted small fw-bold">Pago Inicial / Anticipo</label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-end-0">S/</span>
+              <input type="number" step="0.01" class="form-control fw-bold text-success border-start-0" formControlName="anticipo" placeholder="0.00">
+            </div>
+            <div class="form-text small" *ngIf="isEditMode">Este es el total pagado hasta la fecha.</div>
+          </div>
+        </div>
+
+        <div class="card bg-light border-0 mb-4">
+          <div class="card-body">
+            <div class="row text-center">
+              <div class="col-6 border-end">
+                <small class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">Costo Total</small>
+                <h3 class="text-dark mb-0 fw-bold">S/ {{ calculoTotal | number:'1.2-2' }}</h3>
+              </div>
+              <div class="col-6">
+                <small class="text-uppercase text-muted fw-bold" style="font-size: 0.7rem;">Saldo Pendiente</small>
+                <h3 class="mb-0 fw-bold" [ngClass]="calculoPendiente > 0.1 ? 'text-danger' : 'text-success'">
+                  S/ {{ calculoPendiente | number:'1.2-2' }}
+                </h3>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <a routerLink="/compras" class="btn btn-light border px-4">Cancelar</a>
+          <button type="submit" class="btn btn-primary px-4 fw-bold shadow-sm" [disabled]="form.invalid">
+            <i class="bi bi-save me-2"></i>
+            {{ isEditMode ? 'Actualizar Datos' : 'Registrar Compra' }}
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

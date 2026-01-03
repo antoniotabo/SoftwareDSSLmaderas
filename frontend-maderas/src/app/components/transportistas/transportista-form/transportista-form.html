@@ -1,0 +1,50 @@
+<div class="container mt-4">
+  <div class="card shadow mx-auto border-0" style="max-width: 600px;">
+    
+    <div class="card-header bg-dark text-white py-3">
+      <h4 class="mb-0 fw-bold">
+        <i class="bi bi-truck me-2"></i>
+        {{ isEditMode ? 'Editar Transportista' : 'Registrar Transportista' }}
+      </h4>
+    </div>
+
+    <div class="card-body p-4">
+      <form [formGroup]="form" (ngSubmit)="guardar()">
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">Nombre o Razón Social</label>
+          <input type="text" class="form-control" formControlName="nombre" placeholder="Ej: TRANSPALH SAC">
+          <div *ngIf="form.get('nombre')?.invalid && form.get('nombre')?.touched" class="text-danger small">
+            Nombre requerido.
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label fw-bold">RUC</label>
+          <input type="text" class="form-control" formControlName="ruc" maxlength="11" placeholder="Ej: 20123456789">
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label fw-bold">Contacto (Email / Teléfono)</label>
+          <input type="text" class="form-control" formControlName="contacto" placeholder="Ej: contacto@empresa.com">
+        </div>
+
+        <div class="mb-4" *ngIf="isEditMode">
+            <label class="form-label fw-bold">Estado</label>
+            <select class="form-select" formControlName="estado">
+                <option value="ACTIVO">ACTIVO</option>
+                <option value="INACTIVO">INACTIVO</option>
+            </select>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+          <a routerLink="/transportistas" class="btn btn-light border px-4">Cancelar</a>
+          <button type="submit" class="btn btn-primary px-4 fw-bold" [disabled]="form.invalid">
+            <i class="bi bi-save me-2"></i> Guardar
+          </button>
+        </div>
+
+      </form>
+    </div>
+  </div>
+</div>

@@ -3,21 +3,22 @@ const db = require('../config/database');
 // Listar transportistas
 const getTransportistas = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM transportistas ORDER BY nombre ASC');
+        const [rows] = await db.query('SELECT * FROM transportistas ORDER BY id DESC');
         res.json({ success: true, data: rows });
     } catch (error) {
-        res.status(500).json({ success: false, mensaje: 'Error al obtener transportistas', error: error.message });
+        res.status(500).json({ success: false, mensaje: 'Error al obtener', error: error.message });
     }
 };
 
-// Crear transportista
+// Crear transportista (AJUSTADO A TU BD REAL)
 const createTransportista = async (req, res) => {
     try {
-        const { nombre, ruc, placa_vehiculo, licencia_conducir, telefono } = req.body;
+        // Solo pedimos lo que tu tabla tiene
+        const { nombre, ruc, contacto } = req.body;
         
         const [result] = await db.query(
-            'INSERT INTO transportistas (nombre, ruc, placa_vehiculo, licencia_conducir, telefono) VALUES (?, ?, ?, ?, ?)',
-            [nombre, ruc, placa_vehiculo, licencia_conducir, telefono]
+            'INSERT INTO transportistas (nombre, ruc, contacto, estado) VALUES (?, ?, ?, ?)',
+            [nombre, ruc, contacto, 'ACTIVO'] // Por defecto ACTIVO
         );
         
         res.status(201).json({ 
@@ -34,11 +35,11 @@ const createTransportista = async (req, res) => {
 const updateTransportista = async (req, res) => {
     try {
         const { id } = req.params;
-        const { nombre, ruc, placa_vehiculo, licencia_conducir, telefono } = req.body;
+        const { nombre, ruc, contacto, estado } = req.body; // Agregamos estado por si quieres desactivarlo
         
         await db.query(
-            'UPDATE transportistas SET nombre=?, ruc=?, placa_vehiculo=?, licencia_conducir=?, telefono=? WHERE id=?',
-            [nombre, ruc, placa_vehiculo, licencia_conducir, telefono, id]
+            'UPDATE transportistas SET nombre=?, ruc=?, contacto=?, estado=? WHERE id=?',
+            [nombre, ruc, contacto, estado, id]
         );
         
         res.json({ success: true, mensaje: 'Transportista actualizado' });

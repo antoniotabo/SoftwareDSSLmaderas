@@ -1,0 +1,166 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-lg-10">
+      <div class="card shadow border-0">
+        <div class="card-header bg-white border-bottom">
+          <h4 class="mb-0">
+            <i class="bi bi-truck me-2"></i>
+            {{ isEditMode ? 'Editar Flete' : 'Nuevo Flete' }}
+          </h4>
+        </div>
+        <div class="card-body p-4">
+          <form [formGroup]="form" (ngSubmit)="guardar()">
+            
+            <!-- Fila 1: Fecha y Transportista -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label">
+                  Fecha <span class="text-danger">*</span>
+                </label>
+                <input 
+                  type="date" 
+                  formControlName="fecha" 
+                  class="form-control"
+                  [class.is-invalid]="form.get('fecha')?.invalid && form.get('fecha')?.touched">
+                <div class="invalid-feedback">La fecha es obligatoria</div>
+              </div>
+
+              <div class="col-md-8">
+                <label class="form-label">
+                  Transportista <span class="text-danger">*</span>
+                </label>
+                <select 
+                  formControlName="transportista_id" 
+                  class="form-select"
+                  [class.is-invalid]="form.get('transportista_id')?.invalid && form.get('transportista_id')?.touched">
+                  <option value="">Seleccione transportista</option>
+                  <option *ngFor="let t of transportistas" [value]="t.id">
+                    {{ t.nombre }} - RUC: {{ t.ruc }}
+                  </option>
+                </select>
+                <div class="invalid-feedback">Seleccione un transportista</div>
+              </div>
+            </div>
+
+            <!-- Fila 2: Guías -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label">Guía Remitente</label>
+                <input 
+                  type="text" 
+                  formControlName="guia_remitente" 
+                  class="form-control"
+                  placeholder="Ej: 0002-000001">
+              </div>
+
+              <div class="col-md-6">
+                <label class="form-label">Guía Transportista</label>
+                <input 
+                  type="text" 
+                  formControlName="guia_transportista" 
+                  class="form-control"
+                  placeholder="Ej: 001-000001">
+              </div>
+            </div>
+
+            <!-- Fila 3: Detalle de Carga -->
+            <div class="mb-3">
+              <label class="form-label">Detalle de Carga</label>
+              <textarea 
+                formControlName="detalle_carga" 
+                class="form-control" 
+                rows="2"
+                placeholder="Descripción de la carga"></textarea>
+            </div>
+
+            <!-- Fila 4: Montos -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-4">
+                <label class="form-label">
+                  Valor del Flete <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                  <span class="input-group-text">S/</span>
+                  <input 
+                    type="number" 
+                    formControlName="valor_flete" 
+                    class="form-control text-end"
+                    step="0.01"
+                    min="0"
+                    [class.is-invalid]="form.get('valor_flete')?.invalid && form.get('valor_flete')?.touched">
+                </div>
+                <div class="invalid-feedback d-block" *ngIf="form.get('valor_flete')?.invalid && form.get('valor_flete')?.touched">
+                  El valor es obligatorio y debe ser mayor a 0
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Adelanto</label>
+                <div class="input-group">
+                  <span class="input-group-text">S/</span>
+                  <input 
+                    type="number" 
+                    formControlName="adelanto" 
+                    class="form-control text-end"
+                    step="0.01"
+                    min="0">
+                </div>
+              </div>
+
+              <div class="col-md-4">
+                <label class="form-label">Pago</label>
+                <div class="input-group">
+                  <span class="input-group-text">S/</span>
+                  <input 
+                    type="number" 
+                    formControlName="pago" 
+                    class="form-control text-end"
+                    step="0.01"
+                    min="0">
+                </div>
+              </div>
+            </div>
+
+            <!-- Resumen de Pendiente -->
+            <div class="alert alert-info d-flex justify-content-between align-items-center mb-3">
+              <span>
+                <i class="bi bi-info-circle me-2"></i>
+                <strong>Pendiente de pago:</strong>
+              </span>
+              <span class="fs-5 fw-bold">
+                S/ {{ pendienteCalculado | number:'1.2-2' }}
+              </span>
+            </div>
+
+            <!-- Observaciones -->
+            <div class="mb-4">
+              <label class="form-label">Observaciones</label>
+              <textarea 
+                formControlName="observacion" 
+                class="form-control" 
+                rows="3"
+                placeholder="Notas adicionales sobre el flete"></textarea>
+            </div>
+
+            <!-- Botones de Acción -->
+            <div class="d-flex justify-content-end gap-2">
+              <button 
+                type="button"
+                routerLink="/fletes"
+                class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-2"></i>Cancelar
+              </button>
+              <button 
+                type="submit"
+                [disabled]="form.invalid"
+                class="btn btn-primary">
+                <i class="bi bi-save me-2"></i>
+                {{ isEditMode ? 'Actualizar' : 'Guardar' }} Flete
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

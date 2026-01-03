@@ -1,0 +1,133 @@
+<div class="container">
+  <div class="row justify-content-center">
+    <div class="col-lg-8">
+      <div class="card shadow border-0">
+        <div class="card-header bg-danger text-white border-0">
+          <h4 class="mb-0">
+            <i class="bi bi-person-gear me-2"></i>
+            {{ isEditMode ? 'Editar Usuario' : 'Nuevo Usuario' }}
+          </h4>
+        </div>
+        <div class="card-body p-4">
+          <form [formGroup]="form" (ngSubmit)="guardar()">
+            
+            <!-- Nombre -->
+            <div class="mb-3">
+              <label class="form-label">
+                Nombre Completo <span class="text-danger">*</span>
+              </label>
+              <input 
+                type="text" 
+                formControlName="nombre" 
+                class="form-control"
+                placeholder="Ej: Juan Pérez"
+                [class.is-invalid]="form.get('nombre')?.invalid && form.get('nombre')?.touched">
+              <div class="invalid-feedback">
+                El nombre es obligatorio (mínimo 3 caracteres)
+              </div>
+            </div>
+
+            <!-- Email -->
+            <div class="mb-3">
+              <label class="form-label">
+                Email <span class="text-danger">*</span>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-envelope"></i>
+                </span>
+                <input 
+                  type="email" 
+                  formControlName="email" 
+                  class="form-control"
+                  placeholder="usuario@ejemplo.com"
+                  [class.is-invalid]="form.get('email')?.invalid && form.get('email')?.touched">
+                <div class="invalid-feedback">
+                  Ingrese un email válido
+                </div>
+              </div>
+            </div>
+
+            <!-- Contraseña -->
+            <div class="mb-3">
+              <label class="form-label">
+                Contraseña 
+                <span class="text-danger" *ngIf="!isEditMode">*</span>
+                <small class="text-muted" *ngIf="isEditMode">(dejar en blanco para no cambiar)</small>
+              </label>
+              <div class="input-group">
+                <span class="input-group-text">
+                  <i class="bi bi-key"></i>
+                </span>
+                <input 
+                  type="password" 
+                  formControlName="password" 
+                  class="form-control"
+                  placeholder="Mínimo 6 caracteres"
+                  [class.is-invalid]="form.get('password')?.invalid && form.get('password')?.touched">
+                <div class="invalid-feedback">
+                  La contraseña debe tener al menos 6 caracteres
+                </div>
+              </div>
+            </div>
+
+            <!-- Rol -->
+            <div class="mb-3">
+              <label class="form-label">
+                Rol <span class="text-danger">*</span>
+              </label>
+              <select 
+                formControlName="rol" 
+                class="form-select"
+                [class.is-invalid]="form.get('rol')?.invalid && form.get('rol')?.touched">
+                <option value="admin">Gerente (Acceso Total)</option>
+                <option value="usuario">Empleado (Sin gestión de usuarios)</option>
+              </select>
+              <small class="form-text text-muted">
+                <i class="bi bi-info-circle me-1"></i>
+                El Gerente puede crear usuarios. El Empleado accede a todo lo demás.
+              </small>
+            </div>
+
+            <!-- Estado -->
+            <div class="mb-4">
+              <label class="form-label">
+                Estado <span class="text-danger">*</span>
+              </label>
+              <select 
+                formControlName="estado" 
+                class="form-select"
+                [class.is-invalid]="form.get('estado')?.invalid && form.get('estado')?.touched">
+                <option value="ACTIVO">Activo</option>
+                <option value="INACTIVO">Inactivo</option>
+              </select>
+            </div>
+
+            <!-- Botones -->
+            <div class="d-flex justify-content-end gap-2">
+              <button 
+                type="button"
+                routerLink="/usuarios"
+                class="btn btn-outline-secondary">
+                <i class="bi bi-x-circle me-2"></i>Cancelar
+              </button>
+              <button 
+                type="submit"
+                [disabled]="form.invalid"
+                class="btn btn-danger">
+                <i class="bi bi-save me-2"></i>
+                {{ isEditMode ? 'Actualizar' : 'Crear' }} Usuario
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Información adicional -->
+      <div class="alert alert-warning mt-3" *ngIf="!isEditMode">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        <strong>Importante:</strong> Asegúrate de proporcionar una contraseña segura al usuario.
+      </div>
+    </div>
+  </div>
+</div>
