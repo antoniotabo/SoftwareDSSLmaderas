@@ -43,11 +43,11 @@ export class PackingListComponent implements OnInit {
 
         // --- ENCABEZADO ---
         doc.setFontSize(20);
-        doc.text('DSSL MADERAS', 14, 20); // Nombre de tu empresa
+        doc.text('MORRISON GREEN FOREST E.I.R.L.', 14, 20); // Nombre de tu empresa
         
         doc.setFontSize(10);
-        doc.text('RUC: 20123456789', 14, 26);
-        doc.text('Dirección: Pucallpa, Perú', 14, 30);
+        doc.text('RUC: 20609978920', 14, 26);
+        doc.text('Dirección: Jr. Fitzcarrald Nro. 159', 14, 30);
         
         // Datos del Packing (Lado Derecho)
         doc.setFontSize(16);

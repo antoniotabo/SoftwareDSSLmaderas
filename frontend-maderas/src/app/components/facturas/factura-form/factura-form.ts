@@ -4,7 +4,6 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } fr
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { FacturaService } from '../../../services/factura.service';
 import { ClienteService } from '../../../services/cliente.service';
-// ✅ Importamos el servicio de Packing
 import { PackingService } from '../../../services/packing.service';
 
 @Component({
@@ -17,14 +16,19 @@ export class FacturacionFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private facturaService = inject(FacturaService);
   private clienteService = inject(ClienteService);
-  private packingService = inject(PackingService); // ✅ Inyección
+  private packingService = inject(PackingService);
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
   form: FormGroup;
   clientes: any[] = [];
-  packings: any[] = []; // ✅ Lista de packings disponibles
-  totalGeneral = 0;
+  packings: any[] = [];
+  
+  // ✅ VARIABLES EXACTAS PARA EL HTML (Sin cálculos extra en la vista)
+  subtotalCalculado = 0; // Valor Venta (Base)
+  igvCalculado = 0;      // Impuesto
+  totalCalculado = 0;    // Total a Pagar
+
   isEditMode = false;
   facturaId: number | null = null;
   loadingPackings = false;
@@ -32,38 +36,30 @@ export class FacturacionFormComponent implements OnInit {
   constructor() {
     this.form = this.fb.group({
       cliente_id: ['', Validators.required],
-      packing_id: [''], // ✅ Control para el packing
+      packing_id: [''],
       factura_nro: ['', Validators.required],
       guia_nro: [''],
       fecha: [new Date().toISOString().substring(0, 10), Validators.required],
       descripcion: [''],
-      igv_pct: [0.18],
-      detraccion_pct: [0.04],
+      incluir_igv: [true], // Switch
       items: this.fb.array([]) 
     });
   }
 
   ngOnInit() {
-    // 1. Cargar Clientes
-    this.clienteService.getClientes().subscribe(data => {
-        this.clientes = Array.isArray(data) ? data : (data as any).data;
-    });
+    this.clienteService.getClientes().subscribe(data => this.clientes = Array.isArray(data) ? data : (data as any).data);
+    this.packingService.getPackings().subscribe({ next: (res: any) => this.packings = res.data || res });
 
-    // 2. Cargar Packings (Solo los recientes para no saturar)
-    this.packingService.getPackings().subscribe({
-        next: (res: any) => {
-            this.packings = res.data || res;
-        }
-    });
+    // Recalcular siempre que algo cambie
+    this.form.valueChanges.subscribe(() => this.calcularTotales());
 
-    // 3. Verificar Edición
     this.route.params.subscribe(params => {
       if (params['id']) {
         this.isEditMode = true;
         this.facturaId = +params['id'];
         this.cargarFactura(this.facturaId);
       } else {
-        this.agregarItem(); // Fila vacía por defecto
+        this.agregarItem(); 
       }
     });
   }
@@ -72,56 +68,62 @@ export class FacturacionFormComponent implements OnInit {
     return this.form.get('items') as FormArray;
   }
 
-  // ✅ LOGICA DE NEGOCIO: Al seleccionar un Packing
+  // ==========================================================
+  // ✅ 1. CORRECCIÓN NOMBRE "MADERA CUMALA" Y DECIMALES
+  // ==========================================================
   onPackingChange(event: any) {
     const packingId = event.target.value;
     if (!packingId) return;
 
-    // Preguntar antes de borrar lo que ya escribió
     if (this.items.length > 0 && this.items.at(0).get('producto')?.value !== '') {
-        if(!confirm('Al seleccionar un packing se reemplazarán los items actuales. ¿Desea continuar?')) {
-            this.form.patchValue({ packing_id: '' }); // Cancelar selección
+        if(!confirm('Se reemplazarán los items actuales. ¿Continuar?')) {
+            this.form.patchValue({ packing_id: '' });
             return;
         }
     }
 
     this.loadingPackings = true;
     
-    // Obtenemos el detalle del packing desde el backend
     this.packingService.getPackingById(packingId).subscribe({
         next: (res: any) => {
-            const packing = res.data || res; // Ajusta según tu backend
+            const packing = res.data || res;
             
-            // 1. Auto-seleccionar Cliente si coincide
-            if (packing.cliente_id) {
-                this.form.patchValue({ cliente_id: packing.cliente_id });
-            }
+            // Auto-cliente
+            if (packing.cliente_id) this.form.patchValue({ cliente_id: packing.cliente_id });
 
-            // 2. Llenar Items
+            // Especie Principal del Packing (ej: CUMALA)
+            const especiePrincipal = packing.especie || 'Madera';
+
             this.items.clear();
-            const itemsPacking = packing.items || []; // Asumimos que el endpoint trae items
+            const itemsPacking = packing.items || [];
 
             if (itemsPacking.length > 0) {
                 itemsPacking.forEach((pItem: any) => {
-                    // Formatear descripción técnica: Especie + Medidas
-                    const descripcion = `${pItem.categoria || 'Madera'} - ${pItem.e}" x ${pItem.a}" x ${pItem.l}'`;
+                    // Si el item no tiene categoría específica, usamos la del Packing (CUMALA)
+                    let nombreMadera = pItem.categoria;
+                    if (!nombreMadera || nombreMadera === 'Madera' || nombreMadera === 'Estándar') {
+                        nombreMadera = especiePrincipal;
+                    }
+
+                    // ✅ DECIMALES: .toFixed(2) para que salga 2.00" x 4.00"
+                    const e = Number(pItem.e).toFixed(2);
+                    const a = Number(pItem.a).toFixed(2);
+                    const l = Number(pItem.l).toFixed(2);
+
+                    const descripcion = `Madera ${nombreMadera} - ${e}" x ${a}" x ${l}'`;
                     
                     this.agregarItem({
                         producto: descripcion,
-                        cantidad: pItem.volumen_pt, // Importante: Facturamos PT
-                        precio_unit: 0 // El precio lo pone el usuario
+                        cantidad: pItem.volumen_pt, 
+                        precio_unit: 0 
                     });
                 });
             } else {
-                alert('El packing seleccionado no tiene items registrados.');
                 this.agregarItem();
             }
             this.loadingPackings = false;
         },
-        error: (err) => {
-            console.error(err);
-            this.loadingPackings = false;
-        }
+        error: (err) => { console.error(err); this.loadingPackings = false; }
     });
   }
 
@@ -130,35 +132,50 @@ export class FacturacionFormComponent implements OnInit {
       producto: [itemData ? itemData.producto : '', Validators.required],
       cantidad: [itemData ? itemData.cantidad : 1, [Validators.required, Validators.min(0.01)]],
       precio_unit: [itemData ? itemData.precio_unit : 0, [Validators.required, Validators.min(0)]],
-      total_item: [itemData ? (itemData.cantidad * itemData.precio_unit) : 0]
+      total_item: [0]
     });
-
-    // Suscribirse a cambios para recalcular en tiempo real
-    itemGroup.get('cantidad')?.valueChanges.subscribe(() => this.calcularFila(itemGroup));
-    itemGroup.get('precio_unit')?.valueChanges.subscribe(() => this.calcularFila(itemGroup));
-
+    // Calcular inicial
+    const total = (itemGroup.get('cantidad')?.value || 0) * (itemGroup.get('precio_unit')?.value || 0);
+    itemGroup.get('total_item')?.setValue(total);
+    
     this.items.push(itemGroup);
-    this.calcularTotal();
-  }
-
-  calcularFila(group: FormGroup) {
-      const cant = group.get('cantidad')?.value || 0;
-      const precio = group.get('precio_unit')?.value || 0;
-      const total = cant * precio;
-      group.get('total_item')?.setValue(total, { emitEvent: false });
-      this.calcularTotal();
   }
 
   eliminarItem(index: number) {
     this.items.removeAt(index);
-    this.calcularTotal();
   }
 
-  calcularTotal() {
-    this.totalGeneral = 0;
-    this.items.controls.forEach(control => {
-      this.totalGeneral += (control.get('total_item')?.value || 0);
+  // ==========================================================
+  // ✅ 2. CORRECCIÓN CÁLCULO (1000 + 180 = 1180)
+  // ==========================================================
+  calcularTotales() {
+    const items = this.items.controls;
+    let subtotalTemp = 0;
+
+    items.forEach((control) => {
+        const cant = Number(control.get('cantidad')?.value) || 0;
+        const precio = Number(control.get('precio_unit')?.value) || 0;
+        const totalLinea = cant * precio;
+        
+        if (control.get('total_item')?.value !== totalLinea) {
+            control.get('total_item')?.setValue(totalLinea, { emitEvent: false });
+        }
+        subtotalTemp += totalLinea;
     });
+
+    // 1. SUBTOTAL (BASE IMPONIBLE)
+    this.subtotalCalculado = subtotalTemp;
+
+    // 2. IGV (18% SOBRE LA BASE)
+    const aplicaIGV = this.form.get('incluir_igv')?.value;
+    if (aplicaIGV) {
+        this.igvCalculado = this.subtotalCalculado * 0.18;
+    } else {
+        this.igvCalculado = 0;
+    }
+
+    // 3. TOTAL (SUMA SIMPLE)
+    this.totalCalculado = this.subtotalCalculado + this.igvCalculado;
   }
 
   cargarFactura(id: number) {
@@ -166,25 +183,24 @@ export class FacturacionFormComponent implements OnInit {
       next: (res: any) => {
         const data = res.data || res;
         if (data.fecha) data.fecha = data.fecha.split('T')[0];
+        const tieneIGV = (data.igv_pct && data.igv_pct > 0);
 
         this.form.patchValue({
           cliente_id: data.cliente_id,
-          packing_id: data.packing_id, // Cargar packing vinculado
+          packing_id: data.packing_id,
           factura_nro: data.factura_nro,
           guia_nro: data.guia_nro,
           fecha: data.fecha,
           descripcion: data.descripcion,
-          igv_pct: data.igv_pct,
-          detraccion_pct: data.detraccion_pct
+          incluir_igv: tieneIGV
         });
 
         this.items.clear();
-        if (data.items && Array.isArray(data.items)) {
+        if (data.items) {
             data.items.forEach((item: any) => this.agregarItem(item));
         }
-        this.calcularTotal();
-      },
-      error: (err) => alert('Error al cargar la factura')
+        setTimeout(() => this.calcularTotales(), 50);
+      }
     });
   }
 
@@ -193,23 +209,20 @@ export class FacturacionFormComponent implements OnInit {
         this.form.markAllAsTouched();
         return;
     }
-    const data = this.form.value;
+    const dataToSend = {
+        ...this.form.value,
+        igv_pct: this.form.value.incluir_igv ? 0.18 : 0,
+        subtotal: this.subtotalCalculado,
+        total: this.totalCalculado
+    };
 
     if (this.isEditMode && this.facturaId) {
-      this.facturaService.updateFactura(this.facturaId, data).subscribe({
-        next: () => {
-            alert('Factura actualizada');
-            this.router.navigate(['/facturacion']);
-        },
-        error: () => alert('Error al actualizar')
+      this.facturaService.updateFactura(this.facturaId, dataToSend).subscribe({
+        next: () => { alert('Actualizado'); this.router.navigate(['/facturacion']); }
       });
     } else {
-      this.facturaService.createFactura(data).subscribe({
-        next: () => {
-            alert('Factura creada exitosamente');
-            this.router.navigate(['/facturacion']);
-        },
-        error: () => alert('Error al crear')
+      this.facturaService.createFactura(dataToSend).subscribe({
+        next: () => { alert('Creado'); this.router.navigate(['/facturacion']); }
       });
     }
   }

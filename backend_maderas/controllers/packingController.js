@@ -162,15 +162,15 @@ const deletePacking = async (req, res) => {
 // ==========================================
 const getPackingItems = async (req, res) => {
    try {
-        const sql = `
-            SELECT p.*, c.razon_social as cliente_nombre 
-            FROM packing p
-            JOIN clientes c ON p.cliente_id = c.id
-            ORDER BY p.fecha DESC, p.id DESC
-        `;
-        const [rows] = await db.query(sql);
+        const { id } = req.params; // 1. Obtenemos el ID que viene en la URL
+        
+        // 2. Buscamos SOLO los ítems de ese ID en la tabla packing_items
+        const sql = 'SELECT * FROM packing_items WHERE packing_id = ?';
+        
+        const [rows] = await db.query(sql, [id]);
         res.json({ data: rows });
     } catch (error) {
+        console.error("Error al listar items:", error);
         res.status(500).json({ message: 'Error al listar items' });
     }
 };

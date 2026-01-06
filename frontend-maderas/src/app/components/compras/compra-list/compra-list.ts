@@ -109,7 +109,7 @@ export class CompraListComponent implements OnInit {
   descargarPDF(compra: any) {
     const doc = new jsPDF();
     doc.setFontSize(18);
-    doc.text('DSSL MADERAS', 14, 20);
+    doc.text('MORRISON GREEN FOREST E.I.R.L.', 14, 20);
     doc.setFontSize(10);
     doc.text('Comprobante de Compra / Gasto', 14, 26);
     doc.text(`Fecha: ${new Date(compra.fecha).toLocaleDateString()}`, 14, 32);

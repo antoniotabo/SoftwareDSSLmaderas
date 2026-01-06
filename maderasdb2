@@ -1,0 +1,676 @@
+-- MySQL dump 10.13  Distrib 8.0.42, for Win64 (x86_64)
+--
+-- Host: 127.0.0.1    Database: maderas_db
+-- ------------------------------------------------------
+-- Server version	8.0.42
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!50503 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Table structure for table `auditoria`
+--
+
+DROP TABLE IF EXISTS `auditoria`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `auditoria` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `entidad` varchar(50) DEFAULT NULL,
+  `entidad_id` int DEFAULT NULL,
+  `accion` varchar(20) DEFAULT NULL,
+  `usuario_id` int DEFAULT NULL,
+  `fecha` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `diff_json` json DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `auditoria`
+--
+
+LOCK TABLES `auditoria` WRITE;
+/*!40000 ALTER TABLE `auditoria` DISABLE KEYS */;
+/*!40000 ALTER TABLE `auditoria` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `clientes`
+--
+
+DROP TABLE IF EXISTS `clientes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `clientes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `razon_social` varchar(150) NOT NULL,
+  `ruc` varchar(20) DEFAULT NULL,
+  `contacto` varchar(120) DEFAULT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `direccion` varchar(200) DEFAULT NULL,
+  `estado` enum('ACTIVO','INACTIVO') DEFAULT 'ACTIVO',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `clientes`
+--
+
+LOCK TABLES `clientes` WRITE;
+/*!40000 ALTER TABLE `clientes` DISABLE KEYS */;
+INSERT INTO `clientes` VALUES (1,'LAD LUMBER SAC','20123456789','ventas@ladlumberasd.com',NULL,NULL,'INACTIVO'),(2,'LAD LUMBER SAC','20123456789','ventas@ladlumber.com',NULL,NULL,'INACTIVO'),(3,'LAD LUMBER SAC','20123456789','ventas@ladlumber.com','555656565','jr. peru','ACTIVO'),(4,'LAD LUMBER SAC','20123456789','ventas@ladlumber.com',NULL,NULL,'INACTIVO'),(5,'prueba1','2030402002','915354568',NULL,NULL,'INACTIVO'),(8,'prueba2','123123123123','9129391239',NULL,NULL,'ACTIVO'),(10,'prueba 3','2010293919202310','prueba@gmail.com','965663556','jr. lima 123','ACTIVO'),(11,'yuriko','20221554654465654','yuriko@gmail.com','935768635','jr mollendo','ACTIVO');
+/*!40000 ALTER TABLE `clientes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `cobranzas`
+--
+
+DROP TABLE IF EXISTS `cobranzas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `cobranzas` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `factura_id` int NOT NULL,
+  `fecha` date NOT NULL,
+  `anticipo` decimal(12,2) DEFAULT '0.00',
+  `entregado` decimal(12,2) DEFAULT '0.00',
+  PRIMARY KEY (`id`),
+  KEY `factura_id` (`factura_id`),
+  CONSTRAINT `cobranzas_ibfk_1` FOREIGN KEY (`factura_id`) REFERENCES `facturas` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `cobranzas`
+--
+
+LOCK TABLES `cobranzas` WRITE;
+/*!40000 ALTER TABLE `cobranzas` DISABLE KEYS */;
+INSERT INTO `cobranzas` VALUES (1,1,'2024-12-10',5000.00,0.00);
+/*!40000 ALTER TABLE `cobranzas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `compras`
+--
+
+DROP TABLE IF EXISTS `compras`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `compras` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `proveedor_id` int NOT NULL,
+  `fecha` date NOT NULL,
+  `tipo_producto` varchar(80) DEFAULT NULL,
+  `cantidad_pt` decimal(12,2) NOT NULL,
+  `precio_pt` decimal(12,2) NOT NULL,
+  `total_compra` decimal(12,2) GENERATED ALWAYS AS ((`cantidad_pt` * `precio_pt`)) STORED,
+  `anticipo` decimal(12,2) DEFAULT '0.00',
+  `total_pendiente` decimal(12,2) GENERATED ALWAYS AS (((`cantidad_pt` * `precio_pt`) - `anticipo`)) STORED,
+  `estado` enum('CANCELADO','PENDIENTE') DEFAULT 'PENDIENTE',
+  PRIMARY KEY (`id`),
+  KEY `proveedor_id` (`proveedor_id`),
+  CONSTRAINT `compras_ibfk_1` FOREIGN KEY (`proveedor_id`) REFERENCES `proveedores` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `compras`
+--
+
+LOCK TABLES `compras` WRITE;
+/*!40000 ALTER TABLE `compras` DISABLE KEYS */;
+INSERT INTO `compras` (`id`, `proveedor_id`, `fecha`, `tipo_producto`, `cantidad_pt`, `precio_pt`, `anticipo`, `estado`) VALUES (2,1,'2024-08-21','MASHONASTE BLOQUES',10816.24,0.76,8000.00,'PENDIENTE'),(3,1,'2025-11-29',NULL,100.00,50.00,0.00,'PENDIENTE'),(4,1,'2025-11-29',NULL,100.00,50.00,0.00,'PENDIENTE'),(5,1,'2025-12-31','PRUEBA TORNILLO',1000.00,2.50,2500.00,'CANCELADO'),(6,4,'2026-01-03','TORNILLO',100.00,20.00,1000.00,'PENDIENTE'),(7,1,'2026-01-06','TORNILLITO',1234.00,12.00,0.00,'PENDIENTE'),(8,4,'2026-01-06','CUMALA',1000.00,10.00,0.00,'PENDIENTE');
+/*!40000 ALTER TABLE `compras` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `compras_gastos`
+--
+
+DROP TABLE IF EXISTS `compras_gastos`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `compras_gastos` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `compra_id` int NOT NULL,
+  `concepto` varchar(120) DEFAULT NULL,
+  `monto` decimal(12,2) DEFAULT NULL,
+  `fecha` date DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `compra_id` (`compra_id`),
+  CONSTRAINT `compras_gastos_ibfk_1` FOREIGN KEY (`compra_id`) REFERENCES `compras` (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `compras_gastos`
+--
+
+LOCK TABLES `compras_gastos` WRITE;
+/*!40000 ALTER TABLE `compras_gastos` DISABLE KEYS */;
+/*!40000 ALTER TABLE `compras_gastos` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `factura_items`
+--
+
+DROP TABLE IF EXISTS `factura_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `factura_items` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `factura_id` int NOT NULL,
+  `producto` varchar(80) DEFAULT NULL,
+  `cantidad` decimal(12,4) NOT NULL,
+  `precio_unit` decimal(12,4) NOT NULL,
+  `total_item` decimal(12,2) GENERATED ALWAYS AS ((`cantidad` * `precio_unit`)) STORED,
+  PRIMARY KEY (`id`),
+  KEY `factura_id` (`factura_id`),
+  CONSTRAINT `factura_items_ibfk_1` FOREIGN KEY (`factura_id`) REFERENCES `facturas` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `factura_items`
+--
+
+LOCK TABLES `factura_items` WRITE;
+/*!40000 ALTER TABLE `factura_items` DISABLE KEYS */;
+INSERT INTO `factura_items` (`id`, `factura_id`, `producto`, `cantidad`, `precio_unit`) VALUES (1,1,'CACHIMBO',11514.0000,1.0100),(2,5,'madera cachimbo',1.0000,500.0000),(4,7,'madera fina',12001.0000,10.0000),(8,10,'Madera CUMALA - 2.00\" x 2.00\" x 30.00\'',100.0000,10.0000),(9,9,'cachimbo - 12.000\" x 23.000\" x 32.000\'',736.0000,10.0000);
+/*!40000 ALTER TABLE `factura_items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `facturas`
+--
+
+DROP TABLE IF EXISTS `facturas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `facturas` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `fecha` date NOT NULL,
+  `cliente_id` int NOT NULL,
+  `factura_nro` varchar(40) DEFAULT NULL,
+  `guia_nro` varchar(40) DEFAULT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `igv_pct` decimal(5,4) DEFAULT '0.1800',
+  `detraccion_pct` decimal(5,4) DEFAULT '0.0400',
+  `estado` enum('EMITIDA','PAGADA','PARCIAL') DEFAULT 'EMITIDA',
+  `packing_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `cliente_id` (`cliente_id`),
+  KEY `fk_factura_packing` (`packing_id`),
+  CONSTRAINT `facturas_ibfk_1` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`),
+  CONSTRAINT `fk_factura_packing` FOREIGN KEY (`packing_id`) REFERENCES `packing` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `facturas`
+--
+
+LOCK TABLES `facturas` WRITE;
+/*!40000 ALTER TABLE `facturas` DISABLE KEYS */;
+INSERT INTO `facturas` VALUES (1,'2024-11-29',1,'001-270','0002-274','CACHIMBO COM L/A',0.1800,0.0400,'EMITIDA',NULL),(5,'2025-12-31',5,'f12','1220','todo bien',0.1800,0.0400,'EMITIDA',NULL),(7,'2025-12-31',3,'f01-ff','f-56','ultima prueba',0.1800,0.0400,'EMITIDA',NULL),(9,'2026-01-06',11,'f123','t123','venta de madera',0.0000,NULL,'EMITIDA',10),(10,'2026-01-06',11,'F1','G12','VENTA A CLIENTE ',0.1800,0.0400,'EMITIDA',13);
+/*!40000 ALTER TABLE `facturas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `fletes`
+--
+
+DROP TABLE IF EXISTS `fletes`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `fletes` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `fecha` date NOT NULL,
+  `transportista_id` int NOT NULL,
+  `guia_remitente` varchar(40) DEFAULT NULL,
+  `guia_transportista` varchar(40) DEFAULT NULL,
+  `detalle_carga` varchar(120) DEFAULT NULL,
+  `valor_flete` decimal(12,2) NOT NULL,
+  `adelanto` decimal(12,2) DEFAULT '0.00',
+  `pago` decimal(12,2) DEFAULT '0.00',
+  `pendiente` decimal(12,2) GENERATED ALWAYS AS (((`valor_flete` - ifnull(`adelanto`,0)) - ifnull(`pago`,0))) STORED,
+  `estado` enum('CANCELADO','PENDIENTE') GENERATED ALWAYS AS ((case when (((`valor_flete` - ifnull(`adelanto`,0)) - ifnull(`pago`,0)) = 0) then _utf8mb4'CANCELADO' else _utf8mb4'PENDIENTE' end)) STORED,
+  `fecha_cancelacion` date DEFAULT NULL,
+  `observacion` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `transportista_id` (`transportista_id`),
+  CONSTRAINT `fletes_ibfk_1` FOREIGN KEY (`transportista_id`) REFERENCES `transportistas` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `fletes`
+--
+
+LOCK TABLES `fletes` WRITE;
+/*!40000 ALTER TABLE `fletes` DISABLE KEYS */;
+INSERT INTO `fletes` (`id`, `fecha`, `transportista_id`, `guia_remitente`, `guia_transportista`, `detalle_carga`, `valor_flete`, `adelanto`, `pago`, `fecha_cancelacion`, `observacion`) VALUES (4,'2025-01-10',1,'0002-000001','001-000001','MADERA CACHIMBO',6360.00,800.00,5560.00,NULL,'CANCELADO'),(5,'2025-01-12',1,'0002-000005','001-000005','MADERA CUMALA',7000.00,1000.00,6000.00,NULL,'ACTUALIZADO'),(6,'2025-11-29',1,NULL,NULL,'MADERA CUMALA',7000.00,0.00,0.00,NULL,NULL),(7,'2025-11-29',1,NULL,NULL,'Madera Cumala - Lote C',7300.00,0.00,0.00,NULL,NULL),(9,'2026-01-06',3,'g11','g123','madera',123.00,0.00,0.00,NULL,'todo en orden');
+/*!40000 ALTER TABLE `fletes` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `packing`
+--
+
+DROP TABLE IF EXISTS `packing`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `packing` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `fecha` datetime DEFAULT NULL,
+  `cliente_id` int NOT NULL,
+  `especie` varchar(60) DEFAULT NULL,
+  `tipo_madera` varchar(60) DEFAULT NULL,
+  `observaciones` varchar(255) DEFAULT NULL,
+  `total_pt` decimal(12,2) DEFAULT '0.00',
+  PRIMARY KEY (`id`),
+  KEY `cliente_id` (`cliente_id`),
+  CONSTRAINT `packing_ibfk_1` FOREIGN KEY (`cliente_id`) REFERENCES `clientes` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `packing`
+--
+
+LOCK TABLES `packing` WRITE;
+/*!40000 ALTER TABLE `packing` DISABLE KEYS */;
+INSERT INTO `packing` VALUES (2,'2025-11-11 00:00:00',1,'ESTORAQUE','DECKING','Lote 11/11',1.60),(6,'2025-12-31 00:00:00',3,'cahimbo','deking','todo ok',69000.00),(7,'2025-12-31 00:00:00',8,'cachimbito','deking1','todo bien',4500000.00),(8,'2025-12-31 00:00:00',10,'cachj','der','ok ',561500.00),(9,'2025-12-31 00:00:00',1,'PRUEBA','TORNILLO','Test de inventario',200.00),(10,'2026-01-06 14:07:30',11,'cachimbillo','deking','algo humeda',736.00),(11,'2026-01-06 14:07:30',11,'TORNILLITO','Estándar','cliente compra madera',224.00),(12,'2026-01-06 14:07:30',3,'CUMALA','Estándar','en perfecto estado',250.00),(13,'2026-01-06 14:15:04',11,'CUMALA','Estándar','venta a yuriko ',100.00);
+/*!40000 ALTER TABLE `packing` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `packing_items`
+--
+
+DROP TABLE IF EXISTS `packing_items`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `packing_items` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `packing_id` int NOT NULL,
+  `cantidad_piezas` int NOT NULL,
+  `e` decimal(10,3) NOT NULL,
+  `a` decimal(10,3) NOT NULL,
+  `l` decimal(10,3) NOT NULL,
+  `volumen_pt` decimal(12,4) NOT NULL,
+  `categoria` varchar(60) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `packing_id` (`packing_id`),
+  CONSTRAINT `packing_items_ibfk_1` FOREIGN KEY (`packing_id`) REFERENCES `packing` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `packing_items`
+--
+
+LOCK TABLES `packing_items` WRITE;
+/*!40000 ALTER TABLE `packing_items` DISABLE KEYS */;
+INSERT INTO `packing_items` VALUES (1,2,83,1.000,6.000,7.000,1.6000,'DECK SHIHUAHUACO'),(2,6,12,10.000,230.000,30.000,69000.0000,'cachimbo'),(3,7,12,150.000,200.000,150.000,4500000.0000,'cachimbito'),(4,8,1123,10.000,20.000,30.000,561500.0000,'cahn'),(5,9,100,1.000,4.000,6.000,200.0000,'Tabla'),(6,10,1,12.000,23.000,32.000,736.0000,'cachimbo'),(7,11,1,32.000,21.000,4.000,224.0000,''),(8,12,1,50.000,12.000,5.000,250.0000,''),(9,13,10,2.000,2.000,30.000,100.0000,'');
+/*!40000 ALTER TABLE `packing_items` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `parametros`
+--
+
+DROP TABLE IF EXISTS `parametros`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `parametros` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `clave` varchar(50) NOT NULL,
+  `valor_num` decimal(10,4) DEFAULT NULL,
+  `valor_text` varchar(120) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `clave` (`clave`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `parametros`
+--
+
+LOCK TABLES `parametros` WRITE;
+/*!40000 ALTER TABLE `parametros` DISABLE KEYS */;
+INSERT INTO `parametros` VALUES (1,'factor_volumen',12.0000,NULL),(2,'igv_pct',0.1800,NULL),(3,'detraccion_pct',0.0400,NULL);
+/*!40000 ALTER TABLE `parametros` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `proveedores`
+--
+
+DROP TABLE IF EXISTS `proveedores`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `proveedores` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(150) NOT NULL,
+  `ruc` varchar(20) DEFAULT NULL,
+  `contacto` varchar(120) DEFAULT NULL,
+  `estado` enum('ACTIVO','INACTIVO') DEFAULT 'ACTIVO',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `proveedores`
+--
+
+LOCK TABLES `proveedores` WRITE;
+/*!40000 ALTER TABLE `proveedores` DISABLE KEYS */;
+INSERT INTO `proveedores` VALUES (1,'NANDO GRANDA','20987654321','proveedor@nando.com','ACTIVO'),(2,'NANDO GRANDA','20987654321','proveedor@nando.com','ACTIVO'),(3,'NANDO GRANDA','20987654321','proveedor@nando.com','ACTIVO'),(4,'MADERAS ','2039102930190','maderas@gmailcom','ACTIVO');
+/*!40000 ALTER TABLE `proveedores` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `stock`
+--
+
+DROP TABLE IF EXISTS `stock`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `stock` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `especie` varchar(60) DEFAULT NULL,
+  `tipo_madera` varchar(60) DEFAULT NULL,
+  `cantidad_pt` decimal(12,2) DEFAULT '0.00',
+  `ubicacion` varchar(100) DEFAULT NULL,
+  `fecha` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `stock`
+--
+
+LOCK TABLES `stock` WRITE;
+/*!40000 ALTER TABLE `stock` DISABLE KEYS */;
+INSERT INTO `stock` VALUES (1,'MASHONASTE BLOQUES','Estándar',10816.24,'Almacén General','2024-08-21 00:00:00'),(2,NULL,'Estándar',200.00,'Almacén General','2025-11-29 00:00:00'),(3,'PRUEBA TORNILLO','Estándar',1000.00,'Almacén General','2025-12-31 00:00:00'),(4,'TORNILLO','Estándar',100.00,'Almacén General','2026-01-03 00:00:00'),(8,'TORNILLITO','Estándar',1234.00,'Almacén General','2026-01-06 13:05:43'),(9,'CUMALA','Estándar',650.00,'Almacén General','2026-01-06 13:48:51');
+/*!40000 ALTER TABLE `stock` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `transportistas`
+--
+
+DROP TABLE IF EXISTS `transportistas`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `transportistas` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(120) NOT NULL,
+  `ruc` varchar(20) DEFAULT NULL,
+  `contacto` varchar(120) DEFAULT NULL,
+  `estado` enum('ACTIVO','INACTIVO') DEFAULT 'ACTIVO',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `transportistas`
+--
+
+LOCK TABLES `transportistas` WRITE;
+/*!40000 ALTER TABLE `transportistas` DISABLE KEYS */;
+INSERT INTO `transportistas` VALUES (1,'TRANSPALH SAC','12345678901','contacto@transpalh.com','INACTIVO'),(2,'TRANSPALH SAC','12345678901','contacto@transpalh.com','ACTIVO'),(3,'TRANSPALH SAC','12345678901','contacto@transpalh.com','ACTIVO'),(4,'PRUEBA1','29299292929','antonio.tab@gmail.com','ACTIVO');
+/*!40000 ALTER TABLE `transportistas` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Table structure for table `usuarios`
+--
+
+DROP TABLE IF EXISTS `usuarios`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `usuarios` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `rol` varchar(50) DEFAULT NULL,
+  `estado` enum('ACTIVO','INACTIVO') DEFAULT 'ACTIVO',
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `email` (`email`)
+) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Dumping data for table `usuarios`
+--
+
+LOCK TABLES `usuarios` WRITE;
+/*!40000 ALTER TABLE `usuarios` DISABLE KEYS */;
+INSERT INTO `usuarios` VALUES (1,'Propietario','admin@demo.com','$2b$10$MQaa770.idsB6UResKK.sO6TugJ8/dXDJfzWV0SqJIQa083jMZDdi','GERENTE','ACTIVO'),(3,'Administrador','admin@dssl.com','$2b$10$gJlqXt6lDZc8zrOZr.SodOu8vHcIaV5hbW39CoyHpWQdcwcACXtpW','usuario','ACTIVO');
+/*!40000 ALTER TABLE `usuarios` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
+-- Temporary view structure for view `v_facturas_por_mes`
+--
+
+DROP TABLE IF EXISTS `v_facturas_por_mes`;
+/*!50001 DROP VIEW IF EXISTS `v_facturas_por_mes`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_facturas_por_mes` AS SELECT 
+ 1 AS `anio`,
+ 1 AS `mes`,
+ 1 AS `cantidad`,
+ 1 AS `importe_total`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Temporary view structure for view `v_facturas_totales`
+--
+
+DROP TABLE IF EXISTS `v_facturas_totales`;
+/*!50001 DROP VIEW IF EXISTS `v_facturas_totales`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_facturas_totales` AS SELECT 
+ 1 AS `id`,
+ 1 AS `total`,
+ 1 AS `igv`,
+ 1 AS `total_con_igv`,
+ 1 AS `detraccion`,
+ 1 AS `neto`,
+ 1 AS `anticipos`,
+ 1 AS `saldo`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Temporary view structure for view `v_fletes_por_estado`
+--
+
+DROP TABLE IF EXISTS `v_fletes_por_estado`;
+/*!50001 DROP VIEW IF EXISTS `v_fletes_por_estado`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_fletes_por_estado` AS SELECT 
+ 1 AS `estado`,
+ 1 AS `cantidad`,
+ 1 AS `suma_valor`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Temporary view structure for view `v_kardex_entradas`
+--
+
+DROP TABLE IF EXISTS `v_kardex_entradas`;
+/*!50001 DROP VIEW IF EXISTS `v_kardex_entradas`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_kardex_entradas` AS SELECT 
+ 1 AS `producto`,
+ 1 AS `total_entradas`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Temporary view structure for view `v_kardex_salidas`
+--
+
+DROP TABLE IF EXISTS `v_kardex_salidas`;
+/*!50001 DROP VIEW IF EXISTS `v_kardex_salidas`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_kardex_salidas` AS SELECT 
+ 1 AS `producto`,
+ 1 AS `total_salidas`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Temporary view structure for view `v_stock_real`
+--
+
+DROP TABLE IF EXISTS `v_stock_real`;
+/*!50001 DROP VIEW IF EXISTS `v_stock_real`*/;
+SET @saved_cs_client     = @@character_set_client;
+/*!50503 SET character_set_client = utf8mb4 */;
+/*!50001 CREATE VIEW `v_stock_real` AS SELECT 
+ 1 AS `producto`,
+ 1 AS `entradas_pt`,
+ 1 AS `salidas_pt`,
+ 1 AS `stock_actual_pt`*/;
+SET character_set_client = @saved_cs_client;
+
+--
+-- Final view structure for view `v_facturas_por_mes`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_facturas_por_mes`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_facturas_por_mes` AS select year(`f`.`fecha`) AS `anio`,month(`f`.`fecha`) AS `mes`,count(0) AS `cantidad`,coalesce(sum(((select coalesce(sum(`fi`.`total_item`),0) from `factura_items` `fi` where (`fi`.`factura_id` = `f`.`id`)) * (1 + `f`.`igv_pct`))),0) AS `importe_total` from `facturas` `f` group by year(`f`.`fecha`),month(`f`.`fecha`) order by year(`f`.`fecha`) desc,month(`f`.`fecha`) desc */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `v_facturas_totales`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_facturas_totales`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_facturas_totales` AS select `f`.`id` AS `id`,sum(`fi`.`total_item`) AS `total`,(sum(`fi`.`total_item`) * `f`.`igv_pct`) AS `igv`,(sum(`fi`.`total_item`) * (1 + `f`.`igv_pct`)) AS `total_con_igv`,((sum(`fi`.`total_item`) * (1 + `f`.`igv_pct`)) * `f`.`detraccion_pct`) AS `detraccion`,((sum(`fi`.`total_item`) * (1 + `f`.`igv_pct`)) - ((sum(`fi`.`total_item`) * (1 + `f`.`igv_pct`)) * `f`.`detraccion_pct`)) AS `neto`,(select coalesce(sum(`c`.`anticipo`),0) from `cobranzas` `c` where (`c`.`factura_id` = `f`.`id`)) AS `anticipos`,(((sum(`fi`.`total_item`) * (1 + `f`.`igv_pct`)) - ((sum(`fi`.`total_item`) * (1 + `f`.`igv_pct`)) * `f`.`detraccion_pct`)) - (select coalesce(sum(`c`.`anticipo`),0) from `cobranzas` `c` where (`c`.`factura_id` = `f`.`id`))) AS `saldo` from (`facturas` `f` join `factura_items` `fi` on((`fi`.`factura_id` = `f`.`id`))) group by `f`.`id` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `v_fletes_por_estado`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_fletes_por_estado`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_fletes_por_estado` AS select `fletes`.`estado` AS `estado`,count(0) AS `cantidad`,coalesce(sum(`fletes`.`valor_flete`),0) AS `suma_valor` from `fletes` group by `fletes`.`estado` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `v_kardex_entradas`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_kardex_entradas`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_kardex_entradas` AS select `compras`.`tipo_producto` AS `producto`,sum(`compras`.`cantidad_pt`) AS `total_entradas` from `compras` where ((`compras`.`estado` = 'PENDIENTE') or (`compras`.`estado` = 'CANCELADO')) group by `compras`.`tipo_producto` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `v_kardex_salidas`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_kardex_salidas`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_kardex_salidas` AS select concat(`p`.`especie`,' ',`p`.`tipo_madera`) AS `producto`,sum(`pi`.`volumen_pt`) AS `total_salidas` from (`packing` `p` join `packing_items` `pi` on((`p`.`id` = `pi`.`packing_id`))) group by `p`.`especie`,`p`.`tipo_madera` */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+
+--
+-- Final view structure for view `v_stock_real`
+--
+
+/*!50001 DROP VIEW IF EXISTS `v_stock_real`*/;
+/*!50001 SET @saved_cs_client          = @@character_set_client */;
+/*!50001 SET @saved_cs_results         = @@character_set_results */;
+/*!50001 SET @saved_col_connection     = @@collation_connection */;
+/*!50001 SET character_set_client      = utf8mb4 */;
+/*!50001 SET character_set_results     = utf8mb4 */;
+/*!50001 SET collation_connection      = utf8mb4_0900_ai_ci */;
+/*!50001 CREATE ALGORITHM=UNDEFINED */
+/*!50013 DEFINER=`root`@`localhost` SQL SECURITY DEFINER */
+/*!50001 VIEW `v_stock_real` AS select trim(`mt`.`producto`) AS `producto`,sum(`mt`.`entradas`) AS `entradas_pt`,sum(`mt`.`salidas`) AS `salidas_pt`,(sum(`mt`.`entradas`) - sum(`mt`.`salidas`)) AS `stock_actual_pt` from (select `compras`.`tipo_producto` AS `producto`,`compras`.`cantidad_pt` AS `entradas`,0 AS `salidas` from `compras` union all select (case when ((`p`.`tipo_madera` is not null) and (`p`.`tipo_madera` <> '')) then concat(`p`.`especie`,' ',`p`.`tipo_madera`) else `p`.`especie` end) AS `producto`,0 AS `entradas`,`pi`.`volumen_pt` AS `salidas` from (`packing` `p` join `packing_items` `pi` on((`p`.`id` = `pi`.`packing_id`)))) `mt` group by trim(`mt`.`producto`) */;
+/*!50001 SET character_set_client      = @saved_cs_client */;
+/*!50001 SET character_set_results     = @saved_cs_results */;
+/*!50001 SET collation_connection      = @saved_col_connection */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2026-01-06 15:13:42
