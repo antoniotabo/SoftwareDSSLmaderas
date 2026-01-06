@@ -1,65 +1,96 @@
 const db = require('../config/database');
 
-// 1. OBTENER STOCK (Desde la Vista que ya arreglamos)
+// ==========================================
+// 1. OBTENER STOCK (KARDEX ACTUAL)
+// ==========================================
 const getStock = async (req, res) => {
     try {
-        const [rows] = await db.query('SELECT * FROM v_stock_real ORDER BY stock_actual_pt DESC');
+        const sql = `
+            SELECT id, especie, tipo_madera, cantidad_pt, ubicacion, fecha
+            FROM stock
+            ORDER BY fecha DESC, id DESC
+        `;
         
-        const dataFormateada = rows.map(row => ({
-            especie: row.producto || 'Sin Nombre', 
-            tipo_madera: 'General', 
-            ubicacion: 'Almacén Principal', 
-            cantidad_pt: row.stock_actual_pt || 0,
-            entradas: row.entradas_pt,
-            salidas: row.salidas_pt
-        }));
-
-        res.json({ success: true, data: dataFormateada });
+        const [rows] = await db.query(sql);
+        res.json({ data: rows }); 
     } catch (error) {
-        console.error('Error en getStock:', error);
-        res.status(500).json({ message: 'Error al calcular inventario' });
+        console.error('Error al obtener stock:', error);
+        res.status(500).json({ message: 'Error al obtener el inventario' });
     }
 };
 
-// 2. OBTENER MOVIMIENTOS (Aquí estaba el error 500)
+// ==========================================
+// 2. OBTENER HISTORIAL (MOVIMIENTOS)
+// ==========================================
 const getMovimientos = async (req, res) => {
     try {
         const sql = `
             SELECT * FROM (
-                -- COMPRAS (Aquí sí existe estado, lo dejamos opcionalmente o lo quitamos si quieres ver todo)
+                -- COMPRAS
                 SELECT 
                     'COMPRA' as tipo, 
+                    id,  -- Necesitamos el ID para desempatar
                     fecha, 
                     tipo_producto as detalle, 
                     cantidad_pt as cantidad, 
                     'Sistema' as usuario
                 FROM compras 
-                -- WHERE estado != 'ANULADA' -- (Opcional: Tu tabla solo tiene PENDIENTE/CANCELADO, así que esto no filtra nada por ahora)
+                WHERE estado != 'ANULADA' 
 
                 UNION ALL
 
-                -- PACKING / SALIDAS
+                -- PACKING
                 SELECT 
                     'VENTA/PACKING' as tipo, 
+                    p.id, -- Necesitamos el ID para desempatar
                     p.fecha, 
-                    -- Usamos CONCAT_WS para evitar problemas si 'tipo_madera' es NULL
                     CONCAT_WS(' ', p.especie, p.tipo_madera) as detalle, 
                     pi.volumen_pt as cantidad, 
                     'Sistema' as usuario
                 FROM packing p 
                 JOIN packing_items pi ON p.id = pi.packing_id
-                -- ❌ AQUÍ QUITAMOS EL 'WHERE p.estado' PORQUE ESA COLUMNA NO EXISTE
             ) as historial
-            ORDER BY fecha DESC 
+            -- 🔥 CAMBIO CLAVE: Ordenar por Fecha Y por ID para que los nuevos salgan siempre arriba
+            ORDER BY fecha DESC, id DESC 
             LIMIT 50
         `;
         
         const [rows] = await db.query(sql);
         res.json({ success: true, data: rows });
     } catch (error) {
-        console.error('Error en getMovimientos:', error); // Esto te mostrará el error real en la terminal negra
+        console.error('Error en getMovimientos:', error);
         res.status(500).json({ message: 'Error al obtener historial' });
     }
 };
 
-module.exports = { getStock, getMovimientos };
+// ==========================================
+// 3. OBTENER LISTAS (PARA COMBOBOX)
+// ==========================================
+const getSelectores = async (req, res) => {
+    try {
+        const connection = await db.getConnection();
+        
+        // 1. Especies Únicas
+        const [especies] = await connection.query(
+            "SELECT DISTINCT especie FROM stock WHERE especie IS NOT NULL AND especie != '' ORDER BY especie"
+        );
+        
+        // 2. Tipos Únicos
+        const [tipos] = await connection.query(
+            "SELECT DISTINCT tipo_madera FROM stock WHERE tipo_madera IS NOT NULL AND tipo_madera != '' ORDER BY tipo_madera"
+        );
+
+        connection.release();
+        
+        res.json({ 
+            especies: especies.map(e => e.especie), 
+            tipos: tipos.map(t => t.tipo_madera) 
+        });
+
+    } catch (error) {
+        console.error('Error al cargar selectores:', error);
+        res.status(500).json({ message: 'Error al cargar listas' });
+    }
+};
+
+module.exports = { getStock, getMovimientos, getSelectores };

@@ -3,61 +3,76 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h3 class="fw-bold mb-0 text-dark">
-                <i class="bi bi-clipboard-data me-2 text-info"></i>Kardex General
+                <i class="bi bi-clipboard-data me-2 text-primary"></i>Kardex General
             </h3>
-            <p class="text-muted small mb-0">Control de existencias y movimientos</p>
+            <p class="text-muted small mb-0">Control de existencias y movimientos en tiempo real</p>
         </div>
-        <button class="btn btn-outline-primary btn-sm" (click)="cargarDatos()">
-            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+        <button class="btn btn-primary shadow-sm btn-sm px-3" (click)="cargarDatos()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar Datos
         </button>
     </div>
 
     <div class="row g-4">
+        
         <div class="col-lg-8">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-white py-3 border-bottom-0">
+                
+                <div class="card-header bg-white py-3 border-bottom">
                     <h5 class="mb-0 fw-bold text-dark">
                         <i class="bi bi-boxes me-2 text-primary"></i>Stock en Almacén
                     </h5>
                 </div>
+
                 <div class="card-body p-0">
                     <div class="table-responsive">
                         <table class="table table-hover align-middle mb-0">
                             <thead class="bg-light text-secondary text-uppercase small">
                                 <tr>
-                                    <th class="ps-4">Especie / Madera</th>
-                                    <th>Ubicación</th>
-                                    <th class="text-end fw-bold">Cantidad (PT)</th>
-                                    <th class="text-center">Estado</th>
+                                    <th class="ps-4 py-3">Fecha Ingreso</th>
+                                    <th class="py-3">Especie / Madera</th>
+                                    <th class="py-3">Ubicación</th>
+                                    <th class="text-end py-3">Cantidad (PT)</th>
+                                    <th class="text-center py-3">Estado</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr *ngFor="let s of stock">
+                                    
                                     <td class="ps-4">
+                                        <div class="d-flex align-items-center text-muted">
+                                            <i class="bi bi-calendar-event me-2 text-secondary opacity-50"></i>
+                                            <div style="line-height: 1.2;">
+                                                <span class="d-block text-dark small fw-bold">{{ s.fecha | date:'dd/MM/yyyy' }}</span>
+                                                <small style="font-size: 0.75rem;">{{ s.fecha | date:'shortTime' }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td>
                                         <div class="fw-bold text-dark">{{ s.especie }}</div>
-                                        <small class="text-muted">{{ s.tipo_madera }}</small>
+                                        <span class="badge bg-light text-secondary border fw-normal">{{ s.tipo_madera }}</span>
                                     </td>
                                     
                                     <td>
-                                        <span class="badge bg-light text-dark border">
-                                            <i class="bi bi-geo-alt me-1 text-danger"></i>
-                                            {{ s.ubicacion || 'Sin asignar' }}
-                                        </span>
+                                        <small class="text-muted">
+                                            <i class="bi bi-geo-alt-fill me-1 text-danger opacity-75"></i>
+                                            {{ s.ubicacion || 'General' }}
+                                        </small>
                                     </td>
 
                                     <td class="text-end">
-                                        <span class="fs-5 fw-bold text-dark">
-                                            {{ s.cantidad_pt | number:'1.2-2' }}
+                                        <span class="fs-6 fw-bold text-dark">
+                                            {{ s.cantidad_pt | number:'1.0-2' }}
                                         </span>
                                         <small class="text-muted ms-1">PT</small>
                                     </td>
 
                                     <td class="text-center">
-                                        <span class="badge rounded-pill" 
+                                        <span class="badge rounded-pill border" 
                                               [ngClass]="{
-                                                'bg-danger': getStockStatus(s.cantidad_pt) === 'AGOTADO',
-                                                'bg-warning text-dark': getStockStatus(s.cantidad_pt) === 'BAJO',
-                                                'bg-success': getStockStatus(s.cantidad_pt) === 'NORMAL'
+                                                'bg-danger-subtle text-danger border-danger': getStockStatus(s.cantidad_pt) === 'AGOTADO',
+                                                'bg-warning-subtle text-warning-emphasis border-warning': getStockStatus(s.cantidad_pt) === 'BAJO',
+                                                'bg-success-subtle text-success border-success': getStockStatus(s.cantidad_pt) === 'NORMAL'
                                               }">
                                             {{ getStockStatus(s.cantidad_pt) }}
                                         </span>
@@ -65,8 +80,11 @@
                                 </tr>
                                 
                                 <tr *ngIf="stock.length === 0 && !loading">
-                                    <td colspan="4" class="text-center py-5 text-muted">
-                                        No hay stock registrado.
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <div class="py-3">
+                                            <i class="bi bi-box-seam fs-1 d-block mb-2 opacity-25"></i>
+                                            <p class="mb-0">No hay stock registrado en el sistema.</p>
+                                        </div>
                                     </td>
                                 </tr>
                             </tbody>
@@ -78,38 +96,46 @@
 
         <div class="col-lg-4">
             <div class="card shadow-sm border-0 h-100">
-                <div class="card-header bg-dark text-white py-3">
-                    <h5 class="mb-0 fw-bold">
-                        <i class="bi bi-activity me-2"></i>Historial
-                    </h5>
-                    <small class="text-white-50">Entradas y Salidas recientes</small>
+                <div class="card-header bg-dark text-white py-3 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Historial</h5>
+                        <small class="text-white-50">Últimos movimientos</small>
+                    </div>
+                    <i class="bi bi-activity text-white-50"></i>
                 </div>
+                
                 <div class="card-body p-0">
                     <div class="list-group list-group-flush">
                         
-                        <div *ngFor="let mov of movimientos" class="list-group-item p-3 border-bottom">
-                            <div class="d-flex justify-content-between align-items-center mb-1">
-                                <span class="badge" 
-                                      [ngClass]="mov.tipo === 'COMPRA' || mov.tipo === 'ENTRADA' ? 'bg-success bg-opacity-10 text-success' : 'bg-danger bg-opacity-10 text-danger'">
+                        <div *ngFor="let mov of movimientos" class="list-group-item p-3 border-bottom action-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="badge rounded-1" 
+                                      [ngClass]="mov.tipo === 'COMPRA' || mov.tipo === 'ENTRADA' ? 'bg-success bg-opacity-10 text-success border border-success' : 'bg-danger bg-opacity-10 text-danger border border-danger'">
                                     {{ mov.tipo }}
                                 </span>
-                                <small class="text-muted" style="font-size: 0.75rem;">
-                                    {{ mov.fecha | date:'dd/MM HH:mm' }}
+                                <small class="text-muted fw-bold" style="font-size: 0.75rem;">
+                                    {{ mov.fecha | date:'dd MMM, HH:mm' }}
                                 </small>
                             </div>
                             
-                            <h6 class="mb-1 text-dark small fw-bold">{{ mov.detalle }}</h6>
+                            <h6 class="mb-2 text-dark small fw-bold text-uppercase">
+                                {{ mov.detalle }}
+                            </h6>
                             
-                            <div class="d-flex justify-content-between align-items-end">
-                                <small class="text-muted fst-italic">{{ mov.usuario || 'Sistema' }}</small>
+                            <div class="d-flex justify-content-between align-items-end border-top pt-2 mt-2 border-light">
+                                <small class="text-muted fst-italic">
+                                    <i class="bi bi-person-circle me-1"></i>{{ mov.usuario || 'Sistema' }}
+                                </small>
+                                
                                 <span class="fw-bold" 
                                       [ngClass]="mov.tipo === 'COMPRA' ? 'text-success' : 'text-danger'">
-                                    {{ mov.tipo === 'COMPRA' ? '+' : '-' }} {{ mov.cantidad | number:'1.2-2' }} PT
+                                    {{ mov.tipo === 'COMPRA' ? '+' : '-' }} {{ mov.cantidad | number:'1.0-2' }} PT
                                 </span>
                             </div>
                         </div>
 
-                        <div *ngIf="movimientos.length === 0 && !loading" class="text-center p-4 text-muted small">
+                        <div *ngIf="movimientos.length === 0 && !loading" class="text-center p-5 text-muted small">
+                            <i class="bi bi-hourglass-split fs-3 d-block mb-2 opacity-50"></i>
                             Sin movimientos recientes.
                         </div>
 

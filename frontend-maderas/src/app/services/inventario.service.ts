@@ -14,4 +14,8 @@ export class InventarioService {
   getMovimientos(): Observable<any> {
     return this.http.get(`${this.apiUrl}/movimientos`);
   }
+  getSelectores(): Observable<any> {
+    return this.http.get(`${this.apiUrl}/selectores`);
+  }
+
 }

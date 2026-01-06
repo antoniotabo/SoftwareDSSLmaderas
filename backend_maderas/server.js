@@ -48,7 +48,7 @@ app.use('/api/packing', packingRoutes);     // Producción (Maderas)
 app.use('/api/facturas', facturaRoutes);    // Ventas y Cobranzas
 app.use('/api/compras', compraRoutes);      // Compras y Gastos
 app.use('/api/fletes', fleteRoutes);        // Logística
-app.use('/api', inventoryRoutes); // Ajusté esto para que sea /api/inventario (más ordenado)
+app.use('/api/inventario', inventoryRoutes); // Ajusté esto para que sea /api/inventario (más ordenado)
 
 // --- REPORTES ---
 app.use('/api/dashboard', dashboardRoutes); // Gráficos y Resumen

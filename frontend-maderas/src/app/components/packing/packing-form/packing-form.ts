@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, FormArray, ReactiveFormsModule, Validators } fr
 import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { PackingService } from '../../../services/packing.service';
 import { ClienteService } from '../../../services/cliente.service';
+import { InventarioService } from '../../../services/inventario.service';
 
 @Component({
   selector: 'app-packing-form',
@@ -16,12 +17,15 @@ export class PackingFormComponent implements OnInit {
   private fb = inject(FormBuilder);
   private packingService = inject(PackingService);
   private clienteService = inject(ClienteService);
+  private inventarioService = inject(InventarioService);  
   private router = inject(Router);
   private route = inject(ActivatedRoute);
 
   // Form & State Variables
   form: FormGroup;
   clientes: any[] = [];
+  listaEspecies: string[] = [];
+  listaTipos: string[] = [];
   totalPT = 0;
   isEditMode = false;
   packingId: number | null = null;
@@ -39,7 +43,7 @@ export class PackingFormComponent implements OnInit {
 
   ngOnInit() {
     this.cargarClientes();
-
+    this.cargarListasInventario();
     // Check for ID in URL (Edit Mode)
     this.route.params.subscribe(params => {
       if (params['id']) {
@@ -60,7 +64,16 @@ export class PackingFormComponent implements OnInit {
       this.clientes = Array.isArray(data) ? data : (data as any).data;
     });
   }
-
+cargarListasInventario() {
+    this.inventarioService.getSelectores().subscribe({
+      next: (res: any) => {
+        // Asumiendo que tu backend devuelve { especies: [...], tipos: [...] }
+        this.listaEspecies = res.especies || [];
+        this.listaTipos = res.tipos || [];
+      },
+      error: (err) => console.error('Error cargando listas de inventario:', err)
+    });
+  }
   cargarDatosPacking(id: number) {
     // 1. Get Header Data (Client, Date, Species)
     this.packingService.getPackingById(id).subscribe({

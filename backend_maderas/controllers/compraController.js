@@ -10,7 +10,7 @@ const getCompras = async (req, res) => {
                 c.id, c.fecha, c.tipo_producto, c.cantidad_pt, c.precio_pt, 
                 c.total_compra, c.anticipo, c.total_pendiente, c.estado,
                 p.nombre as proveedor_nombre,
-                c.proveedor_id -- Necesario para editar
+                c.proveedor_id
             FROM compras c
             JOIN proveedores p ON c.proveedor_id = p.id
             ORDER BY c.fecha DESC
@@ -45,25 +45,21 @@ const getCompraById = async (req, res) => {
 const registrarPago = async (req, res) => {
     try {
         const { id } = req.params;
-        const { monto_pago } = req.body; // El dinero que está pagando AHORA
+        const { monto_pago } = req.body;
 
-        // 1. Obtener datos actuales
         const [compra] = await db.query('SELECT * FROM compras WHERE id = ?', [id]);
         if (compra.length === 0) return res.status(404).json({ message: 'No existe' });
 
         const datos = compra[0];
-        
-        // 2. Calcular nuevos valores
         const nuevoAnticipo = parseFloat(datos.anticipo || 0) + parseFloat(monto_pago);
         const totalReal = parseFloat(datos.cantidad_pt) * parseFloat(datos.precio_pt);
         
-        // 3. Determinar estado (con margen de error de 0.1 por decimales)
         let nuevoEstado = 'PENDIENTE';
+        // Margen de error 0.1 para evitar problemas de decimales
         if (nuevoAnticipo >= (totalReal - 0.1)) {
-            nuevoEstado = 'CANCELADO'; // Se pagó todo
+            nuevoEstado = 'CANCELADO';
         }
 
-        // 4. Actualizar BD
         await db.query(
             'UPDATE compras SET anticipo = ?, estado = ? WHERE id = ?',
             [nuevoAnticipo, nuevoEstado, id]
@@ -78,34 +74,118 @@ const registrarPago = async (req, res) => {
 };
 
 // ==========================================
-// 4. CREAR Y 5. ELIMINAR (Igual que antes)
+// 4. CREAR COMPRA (CON ACTUALIZACIÓN DE STOCK)
 // ==========================================
 const createCompra = async (req, res) => {
+    // Usamos una conexión dedicada para la transacción
+    const connection = await db.getConnection();
+    await connection.beginTransaction();
+
     try {
-        const { proveedor_id, fecha, tipo_producto, cantidad_pt, precio_pt, anticipo, estado } = req.body;
-        const sql = `INSERT INTO compras (proveedor_id, fecha, tipo_producto, cantidad_pt, precio_pt, anticipo, estado) VALUES (?, ?, ?, ?, ?, ?, ?)`;
-        await db.query(sql, [proveedor_id, fecha, tipo_producto, cantidad_pt, precio_pt, anticipo || 0, estado || 'PENDIENTE']);
-        res.json({ success: true, message: 'Compra registrada' });
+        // Recibimos los datos. 
+        // NOTA: Agregué 'ubicacion' y 'tipo_madera' (si vienen del front) para el stock.
+        const { 
+            proveedor_id, 
+            fecha, 
+            tipo_producto, // Esto será la 'especie' en stock
+            tipo_madera,   // Si no viene, pondremos 'Estándar'
+            cantidad_pt, 
+            precio_pt, 
+            anticipo, 
+            estado,
+            ubicacion      // Importante para saber dónde guardar el stock
+        } = req.body;
+
+        const maderaDefinida = tipo_madera || 'Estándar';
+        const ubicacionDefinida = ubicacion || 'Almacén General';
+
+        // --- PASO A: Insertar en Tabla COMPRAS ---
+        const sqlCompra = `
+            INSERT INTO compras 
+            (proveedor_id, fecha, tipo_producto, cantidad_pt, precio_pt, anticipo, estado) 
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        `;
+        
+        await connection.query(sqlCompra, [
+            proveedor_id, 
+            fecha, 
+            tipo_producto, 
+            cantidad_pt, 
+            precio_pt, 
+            anticipo || 0, 
+            estado || 'PENDIENTE'
+        ]);
+
+        // --- PASO B: Actualizar Tabla STOCK (El Cerebro) ---
+        
+        // 1. Verificar si ya existe esa madera en el inventario
+        const sqlCheckStock = 'SELECT id FROM stock WHERE especie = ? AND tipo_madera = ?';
+        const [existe] = await connection.query(sqlCheckStock, [tipo_producto, maderaDefinida]);
+
+        if (existe.length > 0) {
+            // OPCIÓN 1: YA EXISTE -> SUMAMOS LA CANTIDAD y actualizamos fecha
+            const sqlUpdateStock = `
+                UPDATE stock 
+                SET cantidad_pt = cantidad_pt + ?, fecha = NOW() 
+                WHERE id = ?
+            `;
+            await connection.query(sqlUpdateStock, [cantidad_pt, existe[0].id]);
+        } else {
+            // OPCIÓN 2: ES NUEVO -> CREAMOS LA FILA
+            const sqlInsertStock = `
+                INSERT INTO stock (especie, tipo_madera, cantidad_pt, ubicacion, fecha) 
+                VALUES (?, ?, ?, ?, NOW())
+            `;
+            await connection.query(sqlInsertStock, [
+                tipo_producto, 
+                maderaDefinida, 
+                cantidad_pt, 
+                ubicacionDefinida
+            ]);
+        }
+
+        // Si todo salió bien, confirmamos los cambios
+        await connection.commit();
+        res.json({ success: true, message: 'Compra registrada y Stock actualizado correctamente' });
+
     } catch (error) {
-        res.status(500).json({ message: 'Error al crear', error: error.message });
+        // Si algo falla, deshacemos todo (Rollback)
+        await connection.rollback();
+        console.error('❌ Error en transacción compra/stock:', error);
+        res.status(500).json({ message: 'Error al crear compra', error: error.message });
+    } finally {
+        // Liberamos la conexión
+        connection.release();
     }
 };
 
+// ==========================================
+// 5. ACTUALIZAR COMPRA (Solo datos básicos)
+// ==========================================
 const updateCompra = async (req, res) => {
     try {
         const { id } = req.params;
         const { proveedor_id, fecha, tipo_producto, cantidad_pt, precio_pt, anticipo, estado } = req.body;
+        
+        // NOTA: Si editas la cantidad aquí, idealmente deberías ajustar el stock también.
+        // Por seguridad, esta versión simple solo actualiza el registro contable.
         const sql = `UPDATE compras SET proveedor_id=?, fecha=?, tipo_producto=?, cantidad_pt=?, precio_pt=?, anticipo=?, estado=? WHERE id=?`;
         await db.query(sql, [proveedor_id, fecha, tipo_producto, cantidad_pt, precio_pt, anticipo, estado, id]);
+        
         res.json({ success: true, message: 'Compra actualizada' });
     } catch (error) {
         res.status(500).json({ message: 'Error al actualizar', error: error.message });
     }
 };
 
+// ==========================================
+// 6. ELIMINAR COMPRA
+// ==========================================
 const deleteCompra = async (req, res) => {
     try {
         const { id } = req.params;
+        // OJO: Al eliminar una compra, el stock físico NO baja automáticamente aquí 
+        // (porque podrías haber vendido la madera ya).
         await db.query('DELETE FROM compras WHERE id = ?', [id]);
         res.json({ success: true, message: 'Eliminado' });
     } catch (error) {
@@ -113,4 +193,4 @@ const deleteCompra = async (req, res) => {
     }
 };
 
-module.exports = { getCompras, getCompraById, createCompra, updateCompra, deleteCompra, registrarPago };
+module.exports = { getCompras, getCompraById, registrarPago, createCompra, updateCompra, deleteCompra };
