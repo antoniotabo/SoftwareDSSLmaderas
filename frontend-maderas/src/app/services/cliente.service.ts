@@ -33,4 +33,8 @@ export class ClienteService {
   deleteCliente(id: number): Observable<any> {
   return this.http.delete(`${this.apiUrl}/${id}`);
 }
+verificarRuc(ruc: string) {
+  return this.http.get<any>(`${this.apiUrl}/verificar-ruc/${ruc}`);
+}
+
 }

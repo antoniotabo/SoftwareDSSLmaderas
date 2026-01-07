@@ -49,52 +49,92 @@ const getClienteById = async (req, res) => {
 // 3. Crear cliente (INSERT usando las columnas reales)
 const createCliente = async (req, res) => {
     try {
-        // Recibimos los datos del frontend
         const { razon_social, ruc, direccion, telefono, contacto } = req.body;
-        
-        // Validación básica
+
         if (!razon_social || !ruc) {
             return res.status(400).json({ message: 'Razón Social y RUC son obligatorios' });
         }
 
+        // 🔒 Verificar RUC duplicado
+        const [existe] = await db.query(
+            'SELECT id FROM clientes WHERE ruc = ? AND estado = "ACTIVO"',
+            [ruc]
+        );
+
+        if (existe.length > 0) {
+            return res.status(409).json({
+                code: 1062,
+                message: 'El RUC ya está registrado'
+            });
+        }
+
         const [result] = await db.query(
-            'INSERT INTO clientes (razon_social, ruc, contacto, telefono, direccion, estado) VALUES (?, ?, ?, ?, ?, "ACTIVO")',
+            `INSERT INTO clientes 
+            (razon_social, ruc, contacto, telefono, direccion, estado) 
+            VALUES (?, ?, ?, ?, ?, "ACTIVO")`,
             [razon_social, ruc, contacto, telefono, direccion]
         );
-        
-        res.status(201).json({ 
-            success: true, 
-            message: 'Cliente registrado correctamente', 
-            id: result.insertId 
+
+        res.status(201).json({
+            success: true,
+            message: 'Cliente registrado correctamente',
+            id: result.insertId
         });
 
     } catch (error) {
         console.error("Error SQL:", error);
-        res.status(500).json({ message: 'Error al crear cliente', error: error.message });
+
+        // 🔥 Captura final por UNIQUE (BD)
+        if (error.code === 'ER_DUP_ENTRY') {
+            return res.status(409).json({
+                code: 1062,
+                message: 'El RUC ya está registrado'
+            });
+        }
+
+        res.status(500).json({ message: 'Error al crear cliente' });
     }
 };
+
 
 // 4. Actualizar cliente (UPDATE usando las columnas reales)
 const updateCliente = async (req, res) => {
     try {
         const { id } = req.params;
         const { razon_social, ruc, direccion, telefono, contacto, estado } = req.body;
-        
+
+        // 🔒 Verificar RUC duplicado (excepto el mismo cliente)
+        const [existe] = await db.query(
+            'SELECT id FROM clientes WHERE ruc = ? AND id <> ? AND estado = "ACTIVO"',
+            [ruc, id]
+        );
+
+        if (existe.length > 0) {
+            return res.status(409).json({
+                code: 1062,
+                message: 'El RUC ya está registrado en otro cliente'
+            });
+        }
+
         const [result] = await db.query(
-            'UPDATE clientes SET razon_social=?, ruc=?, contacto=?, telefono=?, direccion=?, estado=? WHERE id=?',
+            `UPDATE clientes 
+             SET razon_social=?, ruc=?, contacto=?, telefono=?, direccion=?, estado=? 
+             WHERE id=?`,
             [razon_social, ruc, contacto, telefono, direccion, estado || 'ACTIVO', id]
         );
-        
+
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Cliente no encontrado para actualizar' });
+            return res.status(404).json({ message: 'Cliente no encontrado' });
         }
 
         res.json({ success: true, message: 'Cliente actualizado correctamente' });
+
     } catch (error) {
         console.error("Error SQL:", error);
-        res.status(500).json({ message: 'Error al actualizar', error: error.message });
+        res.status(500).json({ message: 'Error al actualizar cliente' });
     }
 };
+
 
 // 5. Eliminar cliente (Borrado Lógico: Cambia estado a INACTIVO)
 const deleteCliente = async (req, res) => {
@@ -114,5 +154,22 @@ const deleteCliente = async (req, res) => {
         res.status(500).json({ message: 'Error al eliminar', error: error.message });
     }
 };
+// 6. Verificar si un RUC ya existe (para validación FRONT)
+const existeRuc = async (req, res) => {
+    try {
+        const { ruc } = req.params;
 
-module.exports = { getClientes, getClienteById, createCliente, updateCliente, deleteCliente };
+        const [rows] = await db.query(
+            'SELECT id FROM clientes WHERE ruc = ? AND estado = "ACTIVO"',
+            [ruc]
+        );
+
+        res.json({ existe: rows.length > 0 });
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al verificar RUC' });
+    }
+};
+
+
+module.exports = { getClientes, getClienteById, createCliente, updateCliente, deleteCliente, existeRuc };

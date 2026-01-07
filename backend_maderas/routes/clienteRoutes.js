@@ -7,7 +7,8 @@ const {
     getClienteById, 
     createCliente, 
     updateCliente, 
-    deleteCliente 
+    deleteCliente,
+    existeRuc
 } = require('../controllers/clienteController');
 
 // 2. Importar el Middleware (AQUÍ ESTABA EL ERROR ⚠️)
@@ -23,5 +24,5 @@ router.get('/:id', getClienteById);     // Obtener uno para editar
 router.post('/', createCliente);        // Crear
 router.put('/:id', updateCliente);      // Editar
 router.delete('/:id', deleteCliente);   // Eliminar
-
+router.get('/existe-ruc/:ruc', existeRuc);
 module.exports = router;
