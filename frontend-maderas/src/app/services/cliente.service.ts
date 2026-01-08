@@ -34,7 +34,7 @@ export class ClienteService {
   return this.http.delete(`${this.apiUrl}/${id}`);
 }
 verificarRuc(ruc: string) {
-  return this.http.get<any>(`${this.apiUrl}/verificar-ruc/${ruc}`);
+  return this.http.get<any>(`${this.apiUrl}/existe-ruc/${ruc}`);
 }
 
 }
